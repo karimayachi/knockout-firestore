@@ -1,0 +1,73 @@
+<html>
+    <head>
+        <title>Knockout-Firestore Example</title>
+
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            #settingsView {
+                margin-top: 50px;
+                border-top: 1px solid #ddd;
+                font-size: 13px;
+                padding: 10px;
+            }
+            #settingsView input[type="text"] {
+                margin: 5px 0;
+                width: 300px;
+            }
+            .hint {
+                color: #999;
+                font-size: 12px;
+                width: 400px;
+                margin-top: 30px;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        
+        <div id="contentview">
+            <h1>Todo list</h1>
+            <div data-bind="foreach: todoItems">
+                <div>
+                <input type="text" data-bind="value: title" placeholder="Title" />
+                <input type="text" data-bind="value: description" placeholder="Description" />
+                <input type="checkbox" data-bind="checked: finished" />
+                <input type="text" disabled data-bind="value: createDate" placeholder="Post date" />
+                <button data-bind="click: $root.remove">Remove</button>
+                <button data-bind="click: save, visible: modified">Save</button>
+                </div>
+            </div>
+
+            <button data-bind="click: add">New</button>
+            <button data-bind="click: $root.save">Save all</button>
+        </div>
+
+        <div id="settingsview">
+            <h1>Settings</h1>
+            <input type="text" placeholder="Firebase API key" data-bind="value: apiKey" /><br />
+            <input type="text" placeholder="Firebase Auth Domain" data-bind="value: authDomain" /><br />
+            <input type="text" placeholder="Firebase Project ID" data-bind="value: projectId" /><br />
+            <input type="text" placeholder="Firestore collection, e.g. todoItems" data-bind="value: collection" /><br />
+            Log level:
+            <select data-bind="value: logLevel">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+            Two-way binding: <input type="checkbox" data-bind="checked: twoWayBinding" />
+            <button data-bind="click: bind">Bind</button>
+
+            <div class="hint">
+                Note: you can't re-bind the ViewModel. In stead of going through the pain of ko.cleanNode and manually cleaning up DOM nodes and listeners, just reload the page if you want to test different settings.
+            </div>
+        </div>
+
+        <script type="text/javascript" src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
+        <script type="text/javascript" src="../dist/knockout.firestore.min.js"></script>
+        <script type="text/javascript" src="example.js"></script>
+    </body>
+</html>
