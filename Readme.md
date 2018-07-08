@@ -125,7 +125,7 @@ Examples:
 
 ```javascript
 function BlogPost() { /* BlogPost model */ }
-var collection = db.collection('posts');
+var collection = firebase.firestore().collection('posts');
 
 var options = {
     logLevel: 2,
@@ -137,7 +137,7 @@ var boundObservableArray = kofs.getBoundCollection(collection, BlogPost, options
 
 ```javascript
 function BlogPost() { /* BlogPost model */ }
-var collection = db.collection('posts');
+var collection = firebase.firestore().collection('posts');
 
 var options = {
     where: ['createDate', '>', new Date(Date.now() - 86400000)],
@@ -157,14 +157,14 @@ When using a one-way binding, this removes the item from the user interface, but
 #### saveAll()
 Only when using one-way binding. This will save all documents in the collection with state NEW, MODIFIED and DELETED to the Firestore collection.
 
-### extensions to the Data Model
-The function used to create the documents in the collection (BlogPost in our examples) has it's prototype extended with the following functions:
+### extensions to the Data Model objects
+All objects that are pushed onto the above `ko.observableArray` or that are part of the initial initialization (from `getBoundCollection()`) are synchronized with the Firestore collection and extended with the following functions:
 
 #### save()
-Only when using one-way binding. This will save all the current document to the Firestore collection.
+Only when using one-way binding. This will save the current document to the Firestore collection.
 
 #### modified()
-Only when using one-way binding. A `ko.observable` that is true if the document has unsaved changes. Since this is a bindable `ko.observable`, you can use it in your interface to show and hide a save-button (for instance).
+Only when using one-way binding. This is a `ko.observable` that returns true if the document has unsaved changes. Since this is a bindable `ko.observable`, you can use it in your interface to show and hide a save-button (for instance).
 
 ## License
 
