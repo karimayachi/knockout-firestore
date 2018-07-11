@@ -8,7 +8,7 @@ KOFS is build in Javascript and it extends `ko.Observable` and `ko.ObservableArr
 
 It aims at being simple, clean, lightweight and without dependencies on frameworks (other than Knockout and Firebase ofcourse). 
 
-## Prerequistes
+## Prerequisites
 
 ### For using KOFS
 - Knockout
