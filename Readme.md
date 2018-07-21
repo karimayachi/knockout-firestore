@@ -127,7 +127,7 @@ var BlogPost = function () {
 }
 ```
 Syncs with the Firestore document:
-```json
+```javascript
 {
     title: 'foo',
     content: 'bar'
