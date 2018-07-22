@@ -10,10 +10,10 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function SettingsViewModel () {
-    this.apiKey = ko.observable();
-    this.authDomain = ko.observable();
-    this.projectId = ko.observable();
-    this.collection = ko.observable();
+    this.apiKey = ko.observable('AIzaSyBkdQdHRcJPRobG4VMq6ttnCtF4fr8-6XY');
+    this.authDomain = ko.observable('reflexo-a6432.firebaseapp.com');
+    this.projectId = ko.observable('reflexo-a6432');
+    this.collection = ko.observable('todoItems');
     this.logLevel = ko.observable(0);
     this.twoWayBinding = ko.observable(true);
 
@@ -35,7 +35,8 @@ function SettingsViewModel () {
 
         var options = {
             logLevel: this.logLevel(),
-            twoWayBinding: this.twoWayBinding()
+            twoWayBinding: this.twoWayBinding(),
+            orderBy: ['createDate', 'asc']
         }
 
         
@@ -61,9 +62,30 @@ function TodoViewModel () {
     }
  }
 
- function TodoItem () {
+function TodoItem () {
+    var self = this;
+
      this.title = ko.observable();
      this.description = ko.observable();
      this.finished = ko.observable(false);
      this.createDate = ko.observable(new Date());
+     this.actions = ko.observableArray();
+
+     this.addAction = function () {
+        self.actions.push(new Action());
+     }
  }
+
+ function Action () {
+    var self = this;
+
+    this.title = ko.observable();
+    this.percentageFinished = ko.observable(0);
+
+    this.addTenPercent = function () {
+        var perc = self.percentageFinished();
+        if(perc <= 90) {
+            self.percentageFinished(perc + 10);
+        }
+     }
+}

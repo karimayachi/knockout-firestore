@@ -1,6 +1,6 @@
 'use strict';
-var observable = require('./observableExtension');
-var logging = require('./logging');
+var observable = require('./ModelExtensions');
+var logging = require('./Logging');
 
 exports.extendObservableArray = function (koObservableArray) {
     koObservableArray.fsQuery;
@@ -66,6 +66,10 @@ function collectionChanged(changes) {
                     .then(function (doc) {
                         item.fsBaseCollection = doc.parent;
                         item.fsDocumentId = doc.id;
+
+                        /* get deep includes for Array properties 
+                         * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
+                        bindDeepIncludes(item);
                     }).catch(function (error) {
                         logging.error('Error saving Firestore document :', error);
                     });
@@ -91,6 +95,24 @@ function collectionChanged(changes) {
                 }
 
                 break;
+        }
+    }
+}
+
+function bindDeepIncludes(item) {
+    /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
+     * getOwnPropertyNames(), because the latter also returns non-enumerables */
+    for(var index in Object.keys(item)) {
+        var propertyName = Object.keys(item)[index];
+        
+        if(!item.hasOwnProperty(propertyName)) continue;
+
+        var property = item[propertyName];
+
+        /* get deep includes for Array properties */
+        if(ko.isObservableArray(property)) {
+            var collectionRef = item.fsBaseCollection.doc(item.fsDocumentId).collection(propertyName);
+            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: item.twoWayBinding });
         }
     }
 }

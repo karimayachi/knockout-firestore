@@ -6,11 +6,31 @@
             body {
                 font-family: Arial, Helvetica, sans-serif;
             }
+            td {
+                font-size: 11px;
+                color: #999;
+            }
+            .percentage {
+                width: 100px;
+                height: 19px;
+                display: inline-block;
+                border: 1px solid #ddd;
+                vertical-align: middle;
+            }
+            .percentageBar {
+                background-color: greenyellow;
+                height: 100%;
+                transition: width 0.2s;
+            }
             #settingsView {
-                margin-top: 50px;
                 border-top: 1px solid #ddd;
                 font-size: 13px;
                 padding: 10px;
+                border: 1px solid #aaa;
+                border-radius: 5px;
+                width: 400px;
+                box-shadow: 0 0 4px 0px rgba(0,0,0,0.15);
+                margin: 50px auto;
             }
             #settingsView input[type="text"] {
                 margin: 5px 0;
@@ -30,17 +50,41 @@
         
         <div id="contentview">
             <h1>Todo list</h1>
-            <div data-bind="foreach: todoItems">
-                <div>
-                <input type="text" data-bind="value: title" placeholder="Title" />
-                <input type="text" data-bind="value: description" placeholder="Description" />
-                <input type="checkbox" data-bind="checked: finished" />
-                <input type="text" disabled data-bind="value: createDate" placeholder="Post date" />
-                <button data-bind="click: $root.remove">Remove</button>
-                <button data-bind="click: save, visible: modified">Save</button>
-                </div>
-            </div>
-
+            <table>
+                <thead>
+                    <tr>
+                        <th>Finished</th>
+                        <th>Created</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: todoItems">
+                    <tr>
+                        <td><input type="checkbox" data-bind="checked: finished" /></td>
+                        <td data-bind="text: createDate"></td>
+                        <td><input type="text" data-bind="value: title" placeholder="Title" /></td>
+                        <td><input type="text" data-bind="value: description" placeholder="Description" /></td>
+                        <td>
+                            <div data-bind="foreach: actions">
+                                <div>
+                                    <input type="text" data-bind="value: title" />
+                                    <div class="percentage"><div class="percentageBar" data-bind="style: { width: percentageFinished() + '%' }"></div></div>
+                                    <button data-bind="click: addTenPercent">+</button>
+                                </div>
+                            </div>
+                            <button data-bind="click: addAction">New</button>
+                        </td>
+                        <td>
+                            <button data-bind="click: $root.remove">Remove</button>
+                            <button data-bind="click: save, visible: modified">Save</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
             <button data-bind="click: add">New</button>
             <button data-bind="click: $root.save">Save all</button>
         </div>

@@ -1,56 +1,60 @@
 'use strict';
 
-var logging = require('./logging');
+var logging = require('./Logging');
 
-exports.extendObservable = function (koObservable) {
-    koObservable.fsDocumentId;
-    koObservable.fsBaseCollection;
-    koObservable.lock = false;
-    koObservable.twoWayBinding = true;
+exports.extendObservable = function (document) {
+    document.fsDocumentId;
+    document.fsBaseCollection;
+    document.lock = false;
+    document.twoWayBinding = true;
 
     /* create 'hidden' observables to track changes */
-    Object.defineProperty(koObservable, 'state', {
+    Object.defineProperty(document, 'state', {
         enumerable: false,
         configurable: false,
         writable: false,
         value: ko.observable(0) /* UNCHANGED */
     });
-      Object.defineProperty(koObservable, 'modified', {
+      Object.defineProperty(document, 'modified', {
         enumerable: false,
         configurable: false,
         writable: false,
         value: ko.pureComputed(function () {
-            return koObservable.state() != 0;
+            return document.state() != 0;
         })
     });
 
     /* extend the prototype (the same protoype will be extended for each instance: TODO: OPTIMIZE) */
-    koObservable.__proto__.saveProperty = saveProperty;
-    koObservable.__proto__.getFlatDocument = getFlatDocument;
-    koObservable.__proto__.save = save;
+    document.__proto__.saveProperty = saveProperty;
+    document.__proto__.getFlatDocument = getFlatDocument;
+    document.__proto__.save = save;
 
     /* subscribe to the Knockout changes
      * enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for(var index in Object.keys(koObservable)) {
-        var propertyName = Object.keys(koObservable)[index];
+    for(var index in Object.keys(document)) {
+        var propertyName = Object.keys(document)[index];
         
-        if(!koObservable.hasOwnProperty(propertyName)) continue;
+        if(!document.hasOwnProperty(propertyName)) continue;
 
-        var property = koObservable[propertyName];
+        var property = document[propertyName];
 
-        if(ko.isObservable(property) && !ko.isComputed(property)) {
+        /* Bind listeners to the properties */
+        if(ko.isObservable(property) && 
+           !ko.isObservableArray(property) && 
+           !ko.isComputed(property)) {
+
             (function (elementName) {
                 property.subscribe(function(value) { 
-                    logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + koObservable.lock);
+                    logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + document.lock);
                         
                     /* ignore updates triggered by incoming changes from Firebase */
-                    if (!koObservable.lock) {
-                        if(koObservable.twoWayBinding) { 
-                            koObservable.saveProperty(elementName, value);
+                    if (!document.lock) {
+                        if(document.twoWayBinding) { 
+                            document.saveProperty(elementName, value);
                         }
-                        else if(koObservable.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
-                            koObservable.state(2); /* MODIFIED */
+                        else if(document.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
+                            document.state(2); /* MODIFIED */
                         }
                     }
                 });
@@ -72,7 +76,14 @@ function getFlatDocument () {
         var property = this[propertyName];
 
         if(ko.isObservable(property) && !ko.isComputed(property)) {
-            var propertyValue = property() || '' ;
+            var propertyValue;
+            if(typeof property() === 'boolean' || typeof property() === 'number') {
+                propertyValue = property(); /* 0 or false should just be inserted as a value */
+            }
+            else {
+                propertyValue = property() || '' ; /* but not null, undefined or the likes */
+            }
+            
             document[propertyName] = propertyValue;
         }
     }
