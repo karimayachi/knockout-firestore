@@ -51,6 +51,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                 if (change.type === "added") {
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
+                    var index = change.newIndex;
                     
                     /* extend the Model with the ObservableDocument functionality */
                     modelExtensions.extendObservable(item);
@@ -66,7 +67,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     
                     /* set the collection to localOnly to ignore these incoming changes from Firebase */
                     observableArray.localOnly = true;
-                    observableArray.push(item);
+                    observableArray.splice(index, 0, item);
                     observableArray.localOnly = false;
                 }
                 if (change.type === "modified") {
