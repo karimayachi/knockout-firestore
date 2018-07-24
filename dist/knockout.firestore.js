@@ -30,6 +30,7 @@ var logging = require('./Logging');
 exports.extendObservable = function (document) {
     document.fsDocumentId;
     document.fsBaseCollection;
+    document.includes = {};
     document.lock = false;
     document.twoWayBinding = true;
 
@@ -171,6 +172,7 @@ var logging = require('./Logging');
 exports.extendObservableArray = function (koObservableArray) {
     koObservableArray.fsQuery;
     koObservableArray.fsCollection;
+    koObservableArray.includes = {};
     koObservableArray.localOnly = false;
     koObservableArray.twoWayBinding = true;
 
@@ -224,7 +226,8 @@ function collectionChanged(changes) {
                 /* extend the Model with the ObservableDocument functionality */
                 observable.extendObservable(item);
                 item.twoWayBinding = this.twoWayBinding;
-
+                item.includes = this.includes;
+                
                 if(this.twoWayBinding) {
                     logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id +'"');
 
@@ -276,9 +279,9 @@ function bindDeepIncludes(item) {
         var property = item[propertyName];
 
         /* get deep includes for Array properties */
-        if(ko.isObservableArray(property)) {
+        if(ko.isObservableArray(property) && item.includes[propertyName]) {
             var collectionRef = item.fsBaseCollection.doc(item.fsDocumentId).collection(propertyName);
-            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: item.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, item.includes[propertyName], { twoWayBinding: item.twoWayBinding });
         }
     }
 }
@@ -316,6 +319,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
     options = options || {};
     var where = options.where || [];
     var orderBy = options.orderBy || [];
+    var includes = options.includes || {};
     var twoWayBinding = typeof options.twoWayBinding === 'undefined' ? true : options.twoWayBinding;
 
     /* set log level */
@@ -329,6 +333,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
     observableArray.twoWayBinding = twoWayBinding;
     observableArray.fsQuery = query;
     observableArray.fsCollection = fsCollection;
+    observableArray.includes = includes;
     
     /* subscribe to the Firestore collection */
     query.onSnapshot(function(snapshot) {
@@ -339,6 +344,8 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                 if (change.type === "added") {
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
+                    var index = change.newIndex;
+                    console.log(index);
                     
                     /* extend the Model with the ObservableDocument functionality */
                     modelExtensions.extendObservable(item);
@@ -347,13 +354,14 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     item.fsBaseCollection = change.doc.ref.parent;
                     item.fsDocumentId = change.doc.id;
                     item.twoWayBinding = twoWayBinding;
+                    item.includes = includes;
 
                     /* explode the data AND deep include if two-way */
                     explodeObject(change.doc, item, twoWayBinding);
                     
                     /* set the collection to localOnly to ignore these incoming changes from Firebase */
                     observableArray.localOnly = true;
-                    observableArray.push(item);
+                    observableArray.splice(index, 0, item);
                     observableArray.localOnly = false;
                 }
                 if (change.type === "modified") {
@@ -423,9 +431,11 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
         }
 
         /* get deep includes for Array properties */
-        if(deepInclude && ko.isObservableArray(property)) {
+        if(deepInclude && 
+           ko.isObservableArray(property) &&
+           localObject.includes[propertyName]) {
             var collectionRef = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(propertyName);
-            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: localObject.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, localObject.includes[propertyName], { twoWayBinding: localObject.twoWayBinding });
         }
     }
 

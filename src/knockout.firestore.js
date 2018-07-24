@@ -140,8 +140,9 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
         if(deepInclude && 
            ko.isObservableArray(property) &&
            localObject.includes[propertyName]) {
+            var include = localObject.includes[propertyName];
             var collectionRef = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(propertyName);
-            kofs.bindCollection(property, collectionRef, localObject.includes[propertyName], { twoWayBinding: localObject.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, include.class, { twoWayBinding: localObject.twoWayBinding, orderBy: include.orderBy });
         }
     }
 

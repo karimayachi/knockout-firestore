@@ -113,8 +113,9 @@ function bindDeepIncludes(item) {
 
         /* get deep includes for Array properties */
         if(ko.isObservableArray(property) && item.includes[propertyName]) {
+            var include = item.includes[propertyName];
             var collectionRef = item.fsBaseCollection.doc(item.fsDocumentId).collection(propertyName);
-            kofs.bindCollection(property, collectionRef, item.includes[propertyName], { twoWayBinding: item.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy });
         }
     }
 }
