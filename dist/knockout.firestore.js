@@ -101,7 +101,14 @@ function getFlatDocument () {
         var property = this[propertyName];
 
         if(ko.isObservable(property) && !ko.isComputed(property)) {
-            var propertyValue = property() || '' ;
+            var propertyValue;
+            if(typeof property() === 'boolean' || typeof property() === 'number') {
+                propertyValue = property(); /* 0 or false should just be inserted as a value */
+            }
+            else {
+                propertyValue = property() || '' ; /* but not null, undefined or the likes */
+            }
+            
             document[propertyName] = propertyValue;
         }
     }
@@ -225,6 +232,10 @@ function collectionChanged(changes) {
                     .then(function (doc) {
                         item.fsBaseCollection = doc.parent;
                         item.fsDocumentId = doc.id;
+
+                        /* get deep includes for Array properties 
+                         * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
+                        bindDeepIncludes(item);
                     }).catch(function (error) {
                         logging.error('Error saving Firestore document :', error);
                     });
@@ -253,6 +264,24 @@ function collectionChanged(changes) {
         }
     }
 }
+
+function bindDeepIncludes(item) {
+    /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
+     * getOwnPropertyNames(), because the latter also returns non-enumerables */
+    for(var index in Object.keys(item)) {
+        var propertyName = Object.keys(item)[index];
+        
+        if(!item.hasOwnProperty(propertyName)) continue;
+
+        var property = item[propertyName];
+
+        /* get deep includes for Array properties */
+        if(ko.isObservableArray(property)) {
+            var collectionRef = item.fsBaseCollection.doc(item.fsDocumentId).collection(propertyName);
+            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: item.twoWayBinding });
+        }
+    }
+}
 },{"./Logging":1,"./ModelExtensions":2}],4:[function(require,module,exports){
 'use strict';
 
@@ -274,6 +303,15 @@ ko.isObservableArray = function (instance) {
 /* END OF 3.5.0 FUNCTIONALITY */
 
 exports.getBoundCollection = function (fsCollection, object, options) {
+    /* create the collection as a ko.observableArray and bind it */
+    var collection = ko.observableArray();
+
+    kofs.bindCollection(collection, fsCollection, object, options);
+
+    return collection;
+}
+
+exports.bindCollection = function (observableArray, fsCollection, object, options) {
     /* settings */
     options = options || {};
     var where = options.where || [];
@@ -286,19 +324,18 @@ exports.getBoundCollection = function (fsCollection, object, options) {
     /* create the Firestore query from the collection and the options */
     var query = createFirestoreQuery(fsCollection, where, orderBy);
 
-    /* create the collection as a ko.observableArray and extend it with our functions */
-    var collection = ko.observableArray();
-    observableArrayExtensions.extendObservableArray(collection);
-    collection.twoWayBinding = twoWayBinding;
-    collection.fsQuery = query;
-    collection.fsCollection = fsCollection;
+    /* extend the observableArray with our functions */
+    observableArrayExtensions.extendObservableArray(observableArray);
+    observableArray.twoWayBinding = twoWayBinding;
+    observableArray.fsQuery = query;
+    observableArray.fsCollection = fsCollection;
     
     /* subscribe to the Firestore collection */
     query.onSnapshot(function(snapshot) {
         snapshot.docChanges().forEach(function(change) {
             /* ignore local changes */
             if(!change.doc.metadata.hasPendingWrites) {
-
+                
                 if (change.type === "added") {
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
@@ -306,22 +343,25 @@ exports.getBoundCollection = function (fsCollection, object, options) {
                     /* extend the Model with the ObservableDocument functionality */
                     modelExtensions.extendObservable(item);
 
-                    /* fill the new object with data */
+                    /* fill the new object with meta-data */
                     item.fsBaseCollection = change.doc.ref.parent;
                     item.fsDocumentId = change.doc.id;
                     item.twoWayBinding = twoWayBinding;
-                    explodeObject(change.doc, item);
+
+                    /* explode the data AND deep include if two-way */
+                    explodeObject(change.doc, item, twoWayBinding);
                     
-                    /* set the collection to localOnly to ignore these changes loading from Firebase */
-                    collection.localOnly = true;
-                    collection.push(item);
-                    collection.localOnly = false;
+                    /* set the collection to localOnly to ignore these incoming changes from Firebase */
+                    observableArray.localOnly = true;
+                    observableArray.push(item);
+                    observableArray.localOnly = false;
                 }
                 if (change.type === "modified") {
                     logging.debug('Firestore object ' + change.doc.id + ' modified');
-                    var localDoc = collection.getDocument(change.doc.id);
+                    var localDoc = observableArray.getDocument(change.doc.id);
                     if(localDoc != null) {
-                        explodeObject(change.doc, localDoc);
+                        /* explode the data, but don't mess with the deep includes */
+                        explodeObject(change.doc, localDoc, false);
                     }
                     else {
                         logging.debug('Firestore object ' + change.doc.id + ' not found in local collection');
@@ -329,11 +369,11 @@ exports.getBoundCollection = function (fsCollection, object, options) {
                 }
                 if (change.type === "removed") {
                     logging.debug('Firestore object ' + change.doc.id + ' removed from collection');
-                    var localDoc = collection.getDocument(change.doc.id);
+                    var localDoc = observableArray.getDocument(change.doc.id);
                     if(localDoc != null) {
-                        collection.localOnly = true;
-                        collection.remove(localDoc);
-                        collection.localOnly = false;
+                        observableArray.localOnly = true;
+                        observableArray.remove(localDoc);
+                        observableArray.localOnly = false;
                     }
                     else {
                         /* when removing from Firestore, the snapshot is triggered, so it will try to remove it again when it's no longer there */
@@ -344,11 +384,9 @@ exports.getBoundCollection = function (fsCollection, object, options) {
             }
         });
     });
-
-    return collection;
 }
 
-function explodeObject(firestoreDocument, localObject) {
+function explodeObject(firestoreDocument, localObject, deepInclude) {
     /* during update set lock on the file, so there will be no update loop */
     localObject.lock = true;
 
@@ -385,9 +423,9 @@ function explodeObject(firestoreDocument, localObject) {
         }
 
         /* get deep includes for Array properties */
-        if(ko.isObservableArray(property)) {
+        if(deepInclude && ko.isObservableArray(property)) {
             var collectionRef = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(propertyName);
-            property = kofs.getBoundCollection(collectionRef, Action, { twoWayBinding: localObject.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: localObject.twoWayBinding });
         }
     }
 

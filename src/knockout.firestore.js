@@ -26,6 +26,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
     options = options || {};
     var where = options.where || [];
     var orderBy = options.orderBy || [];
+    var includes = options.includes || {};
     var twoWayBinding = typeof options.twoWayBinding === 'undefined' ? true : options.twoWayBinding;
 
     /* set log level */
@@ -39,6 +40,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
     observableArray.twoWayBinding = twoWayBinding;
     observableArray.fsQuery = query;
     observableArray.fsCollection = fsCollection;
+    observableArray.includes = includes;
     
     /* subscribe to the Firestore collection */
     query.onSnapshot(function(snapshot) {
@@ -57,6 +59,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     item.fsBaseCollection = change.doc.ref.parent;
                     item.fsDocumentId = change.doc.id;
                     item.twoWayBinding = twoWayBinding;
+                    item.includes = includes;
 
                     /* explode the data AND deep include if two-way */
                     explodeObject(change.doc, item, twoWayBinding);
@@ -133,9 +136,11 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
         }
 
         /* get deep includes for Array properties */
-        if(deepInclude && ko.isObservableArray(property)) {
+        if(deepInclude && 
+           ko.isObservableArray(property) &&
+           localObject.includes[propertyName]) {
             var collectionRef = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(propertyName);
-            kofs.bindCollection(property, collectionRef, Action, { twoWayBinding: localObject.twoWayBinding });
+            kofs.bindCollection(property, collectionRef, localObject.includes[propertyName], { twoWayBinding: localObject.twoWayBinding });
         }
     }
 

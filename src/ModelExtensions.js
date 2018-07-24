@@ -5,6 +5,7 @@ var logging = require('./Logging');
 exports.extendObservable = function (document) {
     document.fsDocumentId;
     document.fsBaseCollection;
+    document.includes = {};
     document.lock = false;
     document.twoWayBinding = true;
 
