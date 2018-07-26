@@ -5,7 +5,7 @@ var logging = require('./Logging');
 exports.extendObservable = function (document) {
     document.fsDocumentId;
     document.fsBaseCollection;
-    document.includes = {};
+    document.includes = Object.assign({}, document.includes);
     document.lock = false;
     document.twoWayBinding = true;
 
@@ -16,7 +16,7 @@ exports.extendObservable = function (document) {
         writable: false,
         value: ko.observable(0) /* UNCHANGED */
     });
-      Object.defineProperty(document, 'modified', {
+    Object.defineProperty(document, 'modified', {
         enumerable: false,
         configurable: false,
         writable: false,
@@ -33,28 +33,28 @@ exports.extendObservable = function (document) {
     /* subscribe to the Knockout changes
      * enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for(var index in Object.keys(document)) {
+    for (var index in Object.keys(document)) {
         var propertyName = Object.keys(document)[index];
-        
-        if(!document.hasOwnProperty(propertyName)) continue;
+
+        if (!document.hasOwnProperty(propertyName)) continue;
 
         var property = document[propertyName];
 
         /* Bind listeners to the properties */
-        if(ko.isObservable(property) && 
-           !ko.isObservableArray(property) && 
-           !ko.isComputed(property)) {
+        if (ko.isObservable(property) &&
+            !ko.isObservableArray(property) &&
+            !ko.isComputed(property)) {
 
             (function (elementName) {
-                property.subscribe(function(value) { 
+                property.subscribe(function (value) {
                     logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + document.lock);
-                        
+
                     /* ignore updates triggered by incoming changes from Firebase */
                     if (!document.lock) {
-                        if(document.twoWayBinding) { 
+                        if (document.twoWayBinding) {
                             document.saveProperty(elementName, value);
                         }
-                        else if(document.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
+                        else if (document.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
                             document.state(2); /* MODIFIED */
                         }
                     }
@@ -64,30 +64,30 @@ exports.extendObservable = function (document) {
     }
 }
 
-function getFlatDocument () {
+function getFlatDocument() {
     var document = {};
 
     /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for(var index in Object.keys(this)) {
+    for (var index in Object.keys(this)) {
         var propertyName = Object.keys(this)[index];
 
-        if(!this.hasOwnProperty(propertyName)) continue;
+        if (!this.hasOwnProperty(propertyName)) continue;
 
         var property = this[propertyName];
 
         /* flatten properties, except computed and deep includes */
-        if(ko.isObservable(property) &&
-           !ko.isComputed(property) &&
-           !this.includes[propertyName]) {
+        if (ko.isObservable(property) &&
+            !ko.isComputed(property) &&
+            !this.includes[propertyName]) {
             var propertyValue;
-            if(typeof property() === 'boolean' || typeof property() === 'number') {
+            if (typeof property() === 'boolean' || typeof property() === 'number') {
                 propertyValue = property(); /* 0 or false should just be inserted as a value */
             }
             else {
-                propertyValue = property() || '' ; /* but not null, undefined or the likes */
+                propertyValue = property() || ''; /* but not null, undefined or the likes */
             }
-            
+
             document[propertyName] = propertyValue;
         }
     }
@@ -95,8 +95,8 @@ function getFlatDocument () {
     return document;
 }
 
-function save () {
-    if(this.state() == 0) {
+function save() {
+    if (this.state() == 0) {
         logging.debug('Firestore document ' + this.fsDocumentId + ' unchanged');
         return;
     }
@@ -104,16 +104,22 @@ function save () {
     var self = this;
     var thisDocument = this.getFlatDocument();
 
-    if (self.state() == 1 ) { /* NEW */
+    if (self.state() == 1) { /* NEW */
         this.fsBaseCollection.add(thisDocument).then(function (doc) {
             logging.debug('Firestore document ' + doc.id + ' added to database');
-            self.state(0);
             self.fsDocumentId = doc.id;
+            if(self.state() == 2) { /* document was modified while saving */
+                logging.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
+                self.save();
+            }
+            else {
+                self.state(0);
+            }
         }).catch(function (error) {
             logging.error('Error adding Firestore document :', error);
         });
     }
-    else if(self.state() == 2) { /* MODIFIED */
+    else if (self.state() == 2) { /* MODIFIED */
         this.fsBaseCollection.doc(this.fsDocumentId).update(thisDocument).then(function () {
             logging.debug('Firestore document ' + self.fsDocumentId + ' saved to database');
             self.state(0);
@@ -121,7 +127,7 @@ function save () {
             logging.error('Error saving Firestore document :', error);
         });
     }
-    else if(self.state() == 3) { /* DELETED */
+    else if (self.state() == 3) { /* DELETED */
         this.fsBaseCollection.doc(this.fsDocumentId).delete().then(function () {
             logging.debug('Firestore document ' + self.fsDocumentId + ' deleted from database');
         }).catch(function (error) {
@@ -130,14 +136,23 @@ function save () {
     }
 }
 
-function saveProperty (property, value) {
+function saveProperty(property, value) {
     var self = this;
     var doc = {};
     doc[property] = value;
-    
-    this.fsBaseCollection.doc(this.fsDocumentId).update(doc).then(function () {
-        logging.debug('Firestore document ' + self.fsDocumentId + ' saved to database');
-    }).catch(function (error) {
-        logging.error('Error saving Firestore document :', error);
-    });
+
+    /* it can happen that a property change triggers saveProperty,
+     * while the document is not yet properly saved in Firestore and
+     * has no fsDocumentId yet. In that case don't save to Firestore,
+     * but record the change and mark this document MODIFIED */
+    if (typeof this.fsDocumentId === 'undefined') {
+        this.state(2); // MODIFIED
+    }
+    else {
+        this.fsBaseCollection.doc(this.fsDocumentId).update(doc).then(function () {
+            logging.debug('Firestore document ' + self.fsDocumentId + ' saved to database');
+        }).catch(function (error) {
+            logging.error('Error saving Firestore document :', error);
+        });
+    }
 }

@@ -58,11 +58,12 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     /* extend the Model with the ObservableDocument functionality */
                     modelExtensions.extendObservable(item);
 
-                    /* fill the new object with meta-data */
+                    /* fill the new object with meta-data
+                     * extend / overrule the includes with includes from the passed options */
                     item.fsBaseCollection = change.doc.ref.parent;
                     item.fsDocumentId = change.doc.id;
                     item.twoWayBinding = twoWayBinding;
-                    item.includes = includes;
+                    item.includes = Object.assign(item.includes, includes);
 
                     /* explode the data AND deep include if two-way */
                     explodeObject(change.doc, item, twoWayBinding);

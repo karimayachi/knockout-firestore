@@ -56,10 +56,11 @@ function collectionChanged(changes) {
 
         switch (changes[index].status) {
             case 'added':
-                /* extend the Model with the ObservableDocument functionality */
+                /* extend the Model with the ObservableDocument functionality
+                 * extend / overrule the includes with includes from passed options (only one level) */
                 observable.extendObservable(item);
                 item.twoWayBinding = this.twoWayBinding;
-                item.includes = this.includes;
+                item.includes = Object.assign(item.includes, this.includes);
 
                 if (this.twoWayBinding) {
                     logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
