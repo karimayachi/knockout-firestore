@@ -76,7 +76,10 @@ function getFlatDocument () {
 
         var property = this[propertyName];
 
-        if(ko.isObservable(property) && !ko.isComputed(property)) {
+        /* flatten properties, except computed and deep includes */
+        if(ko.isObservable(property) &&
+           !ko.isComputed(property) &&
+           !this.includes[propertyName]) {
             var propertyValue;
             if(typeof property() === 'boolean' || typeof property() === 'number') {
                 propertyValue = property(); /* 0 or false should just be inserted as a value */

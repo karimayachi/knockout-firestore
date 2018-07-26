@@ -27,7 +27,7 @@ function getDocument(id) {
 
 function detach(item) {
     /* if this collection is Two-Way bound, just delete */
-    if(this.twoWayBinding) {
+    if (this.twoWayBinding) {
         this.remove(item);
     }
     else {
@@ -49,32 +49,32 @@ function saveAll() {
 
 function collectionChanged(changes) {
     /* if local only change (e.g. triggered by load from Firestore) return */
-    if(this.localOnly) { return; }
+    if (this.localOnly) { return; }
 
-    for(var index in changes) {
+    for (var index in changes) {
         var item = changes[index].value;
-        
-        switch(changes[index].status) {
+
+        switch (changes[index].status) {
             case 'added':
                 /* extend the Model with the ObservableDocument functionality */
                 observable.extendObservable(item);
                 item.twoWayBinding = this.twoWayBinding;
                 item.includes = this.includes;
-                
-                if(this.twoWayBinding) {
-                    logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id +'"');
+
+                if (this.twoWayBinding) {
+                    logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
 
                     this.fsCollection.add(item.getFlatDocument())
-                    .then(function (doc) {
-                        item.fsBaseCollection = doc.parent;
-                        item.fsDocumentId = doc.id;
+                        .then(function (doc) {
+                            item.fsBaseCollection = doc.parent;
+                            item.fsDocumentId = doc.id;
 
-                        /* get deep includes for Array properties 
-                         * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
-                        bindDeepIncludes(item);
-                    }).catch(function (error) {
-                        logging.error('Error saving Firestore document :', error);
-                    });
+                            /* get deep includes for Array properties 
+                             * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
+                            createAndBindDeepIncludes(item);
+                        }).catch(function (error) {
+                            logging.error('Error saving Firestore document :', error);
+                        });
                 }
                 else {
                     logging.debug('Adding new document to local collection only');
@@ -84,8 +84,8 @@ function collectionChanged(changes) {
 
                 break;
             case 'deleted':
-                if(this.twoWayBinding) {
-                    logging.debug('Deleting document "' + item.fsDocumentId + '" from Firestore collection "' + this.fsCollection.id +'"');
+                if (this.twoWayBinding) {
+                    logging.debug('Deleting document "' + item.fsDocumentId + '" from Firestore collection "' + this.fsCollection.id + '"');
 
                     item.fsBaseCollection.doc(item.fsDocumentId).delete().catch(function (error) {
                         logging.error('Error deleting Firestore document :', error);
@@ -101,21 +101,33 @@ function collectionChanged(changes) {
     }
 }
 
-function bindDeepIncludes(item) {
+function createAndBindDeepIncludes(item) {
     /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for(var index in Object.keys(item)) {
+    for (var index in Object.keys(item)) {
         var propertyName = Object.keys(item)[index];
-        
-        if(!item.hasOwnProperty(propertyName)) continue;
+
+        if (!item.hasOwnProperty(propertyName)) continue;
 
         var property = item[propertyName];
 
         /* get deep includes for Array properties */
-        if(ko.isObservableArray(property) && item.includes[propertyName]) {
+        if (ko.isObservableArray(property) && item.includes[propertyName]) {
             var include = item.includes[propertyName];
             var collectionRef = item.fsBaseCollection.doc(item.fsDocumentId).collection(propertyName);
             kofs.bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy });
+
+            /* if the collection was locally already filled with data */
+            /* TODO: Transaction for speed */
+            for(var i=0; i<property().length;i++) {
+                var childItem = property()[i];
+
+                observable.extendObservable(childItem);
+                childItem.fsBaseCollection = collectionRef;
+                childItem.twoWayBinding = item.twoWayBinding;
+                childItem.state(1); /* NEW */
+                childItem.save();
+            }
         }
     }
 }
