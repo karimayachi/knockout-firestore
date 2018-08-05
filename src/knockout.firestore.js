@@ -146,7 +146,6 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
 
             if (Array.isArray(propertyData)) {
                 property(propertyData);
-                console.log(propertyName, property());
             }
         }
 
