@@ -111,6 +111,7 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
     for (var index in Object.keys(localObject)) {
         var propertyName = Object.keys(localObject)[index];
+        var propertyData;
 
         if (!localObject.hasOwnProperty(propertyName)) continue;
 
@@ -121,7 +122,7 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
             !ko.isObservableArray(property) &&
             !ko.isComputed(property)) {
 
-            var propertyData = firestoreDocument.get(propertyName);
+            propertyData = firestoreDocument.get(propertyName);
 
             switch (typeof propertyData) {
                 case 'undefined':
@@ -136,6 +137,16 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
                         property(propertyData.toDate());
                     }
                     break;
+            }
+        }
+
+        /* get regular arrays, or arrays not marked for deep inclusion */
+        if (ko.isObservableArray(property) && !localObject.includes[propertyName]) {
+            propertyData = firestoreDocument.get(propertyName);
+
+            if (Array.isArray(propertyData)) {
+                property(propertyData);
+                console.log(propertyName, property());
             }
         }
 
