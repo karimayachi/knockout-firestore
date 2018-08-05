@@ -42,7 +42,7 @@ exports.extendObservable = function (document) {
 
         /* Bind listeners to the properties */
         if (ko.isObservable(property) &&
-            !ko.isObservableArray(property) &&
+            (!ko.isObservableArray(property) || !document.includes[propertyName]) &&
             !ko.isComputed(property)) {
 
             (function (elementName) {
@@ -108,7 +108,7 @@ function save() {
         this.fsBaseCollection.add(thisDocument).then(function (doc) {
             logging.debug('Firestore document ' + doc.id + ' added to database');
             self.fsDocumentId = doc.id;
-            if(self.state() == 2) { /* document was modified while saving */
+            if (self.state() == 2) { /* document was modified while saving */
                 logging.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
                 self.save();
             }
