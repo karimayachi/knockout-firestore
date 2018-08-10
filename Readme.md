@@ -1,12 +1,36 @@
 # Knockout-Firestore
 
-The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' realtime database Firestore.
+The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' realtime database Firestore. It features 'deep includes' (a.k.a. Navigation Properties, a.k.a. nested collections).
 
 It offers a lightweight interface to to create true MVVM applications in the browser, backed by realtime database storage.
 
-KOFS is build in Javascript and it extends `ko.Observable` and `ko.ObservableArray` of Knockout. You can use it in any browser based Javascript project that meets the prerequisites below.
+KOFS is build in Javascript and it extends your view model and the `ko.ObservableArray` of Knockout. You can use it in any browser based Javascript project that meets the prerequisites below.
 
 It aims at being simple, clean, lightweight and without dependencies on frameworks (other than Knockout and Firebase ofcourse). 
+
+## Table of contents
+- [Knockout-Firestore](#knockout-firestore)
+  * [Prerequisites](#prerequisites)
+    + [For using KOFS](#for-using-kofs)
+    + [For building/extending KOFS](#for-building-extending-kofs)
+  * [Quick start](#quick-start)
+  * [Disclaimers](#disclaimers)
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [Example](#example)
+  * [Building](#building)
+  * [Reference](#reference)
+    + [The kofs namespace](#the-kofs-namespace)
+      - [getBoundCollection(collection, object [, options])](#getboundcollection-collection--object----options--)
+    + [extensions to ko.observableArray](#extensions-to-koobservablearray)
+    + [extensions to the Data Model objects](#extensions-to-the-data-model-objects)
+  * [Further reading](#further-reading)
+    + [Deep includes](#deep-includes)
+    + [Excludes](#excludes)
+  * [Release notes](#release-notes)
+    + [1.0.0](#100)
+    + [1.0.0 - Beta 1](#100---beta-1)
+  * [License](#license)
 
 ## Prerequisites
 
@@ -71,12 +95,12 @@ var collection = db.collection('posts');
 Next we will need a ViewModel and the entities in the data model of the application.
 
 ```javascript
-var BlogPost = function() {
-    this.title = ko.Observable();
-    this.content = ko.Observable();
+var BlogPost = function () {
+    this.title = ko.observable();
+    this.content = ko.observable();
 }
 
-var BlogViewModel = function() {
+var BlogViewModel = function () {
     this.blogList = kofs.getBoundCollection(collection, BlogPost);
 }
 ```
@@ -122,8 +146,8 @@ type: [Function]<br>
 A Javascript function that acts as a Model. All koObservable properties of this function will be synced with document properties of the same name. E.g.:
 ```javascript
 var BlogPost = function () {
-      this.title = ko.Observable();
-      this.content = ko.Observable();
+      this.title = ko.observable();
+      this.content = ko.observable();
 }
 ```
 Syncs with the Firestore document:
@@ -137,12 +161,13 @@ Syncs with the Firestore document:
 type: [Object]<br>
 Optional parameters to pass to the binding mechanism:
 
-| Key  | Value |
-|------------|-------------|
-| twoWayBinding | true/false (default: true)<br><br>When set to false, local changes are not automatically saved back to the database. You will have to manually call `save()` or `saveAll()`. Also when using manual saving, be sure to use `detach()` in stead of `remove()`. |
-| where | [ path, operation, value ] or [ [ path, operation, value ],  [ path, operation, value ], ... ] (default: [ ])<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes|
-| orderBy | [ property, 'asc' / 'desc' ] or [ [ property, 'asc' / 'desc' ],  [ property, 'asc' / 'desc' ], ... ] (default: [ ])<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes | 
-| logLevel | 0, 1 or 2 (default: 0)<br><br>Sets the log level. 0 = errors only, 1 = info, 2 = debug. Note, to show debug logging in Chrome, you may have to set log level to verbose in the console.|
+| Key  | Value | Default |
+|------------|-------------|----------|
+| twoWayBinding | true/false <br><br>When set to false, local changes are not automatically saved back to the database. You will have to manually call `save()` or `saveAll()`. Also when using manual saving, be sure to use `detach()` in stead of `remove()`. | true |
+| where | [ path, operation, value ] or [ [ path, operation, value ],  [ path, operation, value ], ... ] ] ]<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes| [ ] |
+| orderBy | [ property, 'asc' / 'desc' ] or [ [ property, 'asc' / 'desc' ],  [ property, 'asc' / 'desc' ], ... ] ]<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes | [ ] |
+| includes | { property : { class: ViewModel, orderBy: [ property, 'asc' / 'desc' ] }, ... }<br><br>property: navigation property / nested array to follow<br>ViewModel: view model function<br>orderBy: OrderBy clause as above<br><br>See [Deep includes](#deep-includes) | { } |
+| logLevel | 0, 1 or 2<br><br>Sets the log level. 0 = errors only, 1 = info, 2 = debug. Note, to show debug logging in Chrome, you may have to set log level to verbose in the console.| 0 |
 
 Note: some combinations of where and orderBy options require you to create an index in Firestore. This will be mentioned in the console output.
 
@@ -190,6 +215,127 @@ Only when using one-way binding. This will save the current document to the Fire
 
 #### modified()
 Only when using one-way binding. This is a `ko.observable` that returns true if the document has unsaved changes. Since this is a bindable `ko.observable`, you can use it in your interface to show and hide a save-button (for instance).
+
+## Further reading
+
+### Deep includes
+**Note:** Deep includes are ignored when twoWayBinding is set to false
+
+KOFS can follow observableArrays in your view model and automatically bind them to nested collections in Firestore. There are two ways to configure this:
+
+#### using the `includes` option
+You can set the properties you want KOFS to follow using the `include` option. Provide the property and the model used and optionally an orderBy clause.
+
+Example:
+```javascript
+var BlogPost = function () {
+    this.title = ko.observable();
+    this.content = ko.observable();
+    this.images = ko.observableArray();
+    this.comments = ko.observableArray();
+};
+
+var Image = function () {
+    this.url = ko.observable();
+    this.title = ko.observable();
+};
+
+var BlogComment = function () {
+    this.comment = ko.observable();
+    this.user = ko.observable();
+    this.postDate = ko.observable();
+};
+
+var BlogViewModel = function () {
+    var options = {
+        where: ['createDate', '>', new Date(Date.now() - 86400000)],
+        orderBy: ['modifiedDate', 'asc'],
+        includes: {
+            images: { class: Image }, 
+            comments: { class: BlogComment, orderBy: ['postDate', 'asc'] }
+        }
+    };
+
+    this.blogList = kofs.getBoundCollection(collection, BlogPost, options);
+};
+```
+Only one level of includes can be defined using this method.
+
+#### using the `includes` property
+Another way to configure the deep includes is using the `includes` property in your view model.
+
+Example:
+```javascript
+var BlogPost = function () {
+    this.includes = { images: { class: Image } };
+
+    this.title = ko.observable();
+    this.content = ko.observable();
+    this.images = ko.observableArray();
+};
+
+var Image = function () {
+    this.includes = { likes: { class: Like, orderBy: ['user', 'desc'] } };
+
+    this.url = ko.observable();
+    this.title = ko.observable();
+    this.likes = ko.observableArray();
+};
+
+var Like = function () {
+    this.user = ko.observable();
+};
+
+var BlogViewModel = function () {
+    var options = {
+        where: ['createDate', '>', new Date(Date.now() - 86400000)],
+        orderBy: ['modifiedDate', 'asc']
+    };
+
+    this.blogList = kofs.getBoundCollection(collection, BlogPost, options);
+};
+```
+Using this method you can deep link multiple levels.
+
+### Excludes
+All observables and observableArrays are bound to the Firestore document. The following properties are excluded from binding:
+* computed and pureComputed properties
+* non-observables (vanilla javascript properties)
+* non-enumarable properties (even if they're observable)
+
+So the following properties of a view model will all not be bound:
+```javascript
+var ThesePropertiesAreNotBound = function () {
+
+    this.computed = ko.pureComputed(function () {
+        return someObservableProperty();
+    });
+
+    this.vanillaProperty = 'hello world';
+
+    // this.observableYetNotBoundProperty = ko.observable();
+    Object.defineProperty(this, 'observableYetNotBoundProperty', {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: ko.observable()
+    });
+}
+```
+
+## Release notes
+
+### 1.0.0
+Added:
+* Deep inludes: binding follows ObservableArrays in view model to nested Firestore collections
+* More configuration options
+
+Bugfixes:
+* Sort order preserved when adding/inserting new objects
+
+
+### 1.0.0 - Beta 1
+First beta version: two way binding between a Firestore collection and an ObservableArray.
 
 ## License
 

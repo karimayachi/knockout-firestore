@@ -1,6 +1,6 @@
 'use strict';
 
-localStorage.logLevel = 2;
+localStorage.logLevel = 1;
 
 exports.setLogLevel = function(level) {
     localStorage.logLevel = level;
