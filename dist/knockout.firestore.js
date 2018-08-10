@@ -377,7 +377,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
                     var index = change.newIndex;
-
+                    
                     /* extend the Model with the ObservableDocument functionality */
                     var combinedIncludes = Object.assign(includes, item.includes);
                     modelExtensions.extendObservable(item, combinedIncludes);
