@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function SettingsViewModel () {
-    this.apiKey = ko.observable('AIzaSyBkdQdHRcJPRobG4VMq6ttnCtF4fr8-6XY');
-    this.authDomain = ko.observable('reflexo-a6432.firebaseapp.com');
-    this.projectId = ko.observable('reflexo-a6432');
+    this.apiKey = ko.observable('');
+    this.authDomain = ko.observable('');
+    this.projectId = ko.observable('');
     this.collection = ko.observable('todoItems');
     this.logLevel = ko.observable(0);
     this.twoWayBinding = ko.observable(true);
@@ -36,7 +36,8 @@ function SettingsViewModel () {
         var options = {
             logLevel: this.logLevel(),
             twoWayBinding: this.twoWayBinding(),
-            orderBy: ['createDate', 'asc']
+            orderBy: ['createDate', 'asc'],
+            includes: { actions: { class: Action, orderBy: ['percentageFinished', 'desc'] } }
         }
 
         

@@ -58,9 +58,8 @@ function collectionChanged(changes) {
             case 'added':
                 /* extend the Model with the ObservableDocument functionality
                  * extend / overrule the includes with includes from passed options (only one level) */
-                observable.extendObservable(item);
+                observable.extendObservable(item, this.includes);
                 item.twoWayBinding = this.twoWayBinding;
-                item.includes = Object.assign(item.includes, this.includes);
 
                 if (this.twoWayBinding) {
                     logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
@@ -123,7 +122,7 @@ function createAndBindDeepIncludes(item) {
             for(var i=0; i<property().length;i++) {
                 var childItem = property()[i];
 
-                observable.extendObservable(childItem);
+                observable.extendObservable(childItem, {});
                 childItem.fsBaseCollection = collectionRef;
                 childItem.twoWayBinding = item.twoWayBinding;
                 childItem.state(1); /* NEW */

@@ -2,10 +2,10 @@
 
 var logging = require('./Logging');
 
-exports.extendObservable = function (document) {
+exports.extendObservable = function (document, includes) {
     document.fsDocumentId;
     document.fsBaseCollection;
-    document.includes = Object.assign({}, document.includes);
+    document.includes = Object.assign(includes || {}, document.includes);
     document.lock = false;
     document.twoWayBinding = true;
 
@@ -44,7 +44,6 @@ exports.extendObservable = function (document) {
         if (ko.isObservable(property) &&
             (!ko.isObservableArray(property) || !document.includes[propertyName]) &&
             !ko.isComputed(property)) {
-
             (function (elementName) {
                 property.subscribe(function (value) {
                     logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + document.lock);
