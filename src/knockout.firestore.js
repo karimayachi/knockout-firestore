@@ -100,6 +100,9 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
 
             }
         });
+
+        /* set indicator that the initial load is completed. Can be used to pause subscriptions on initial load */
+        observableArray.initialLoading = false;
     });
 }
 
