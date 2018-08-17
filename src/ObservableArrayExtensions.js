@@ -1,4 +1,6 @@
+/* global require exports ko kofs */
 'use strict';
+
 var observable = require('./ModelExtensions');
 var logging = require('./Logging');
 
@@ -7,6 +9,7 @@ exports.extendObservableArray = function (koObservableArray) {
     koObservableArray.fsCollection;
     koObservableArray.includes = {};
     koObservableArray.localOnly = false;
+    koObservableArray.initialLoading = true;
     koObservableArray.twoWayBinding = true;
 
     /* extend the prototype (the same protoype will be extended for each instance: TODO: OPTIMIZE) */
@@ -15,7 +18,7 @@ exports.extendObservableArray = function (koObservableArray) {
     koObservableArray.__proto__.saveAll = saveAll;
 
     koObservableArray.subscribe(collectionChanged, koObservableArray, 'arrayChange');
-}
+};
 
 function getDocument(id) {
     for (var i = 0; i < this().length; i++) {
@@ -55,48 +58,48 @@ function collectionChanged(changes) {
         var item = changes[index].value;
 
         switch (changes[index].status) {
-            case 'added':
-                /* extend the Model with the ObservableDocument functionality
+        case 'added':
+            /* extend the Model with the ObservableDocument functionality
                  * extend / overrule the includes with includes from passed options (only one level) */
-                observable.extendObservable(item, this.includes);
-                item.twoWayBinding = this.twoWayBinding;
+            observable.extendObservable(item, this.includes);
+            item.twoWayBinding = this.twoWayBinding;
 
-                if (this.twoWayBinding) {
-                    logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
+            if (this.twoWayBinding) {
+                logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
 
-                    this.fsCollection.add(item.getFlatDocument())
-                        .then(function (doc) {
-                            item.fsBaseCollection = doc.parent;
-                            item.fsDocumentId = doc.id;
+                this.fsCollection.add(item.getFlatDocument())
+                    .then(function (doc) {
+                        item.fsBaseCollection = doc.parent;
+                        item.fsDocumentId = doc.id;
 
-                            /* get deep includes for Array properties 
+                        /* get deep includes for Array properties 
                              * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
-                            createAndBindDeepIncludes(item);
-                        }).catch(function (error) {
-                            logging.error('Error saving Firestore document :', error);
-                        });
-                }
-                else {
-                    logging.debug('Adding new document to local collection only');
-                    item.state(1); /* NEW */
-                    item.fsBaseCollection = this.fsCollection;
-                }
-
-                break;
-            case 'deleted':
-                if (this.twoWayBinding) {
-                    logging.debug('Deleting document "' + item.fsDocumentId + '" from Firestore collection "' + this.fsCollection.id + '"');
-
-                    item.fsBaseCollection.doc(item.fsDocumentId).delete().catch(function (error) {
-                        logging.error('Error deleting Firestore document :', error);
+                        createAndBindDeepIncludes(item);
+                    }).catch(function (error) {
+                        logging.error('Error saving Firestore document :', error);
                     });
-                }
-                else {
-                    logging.debug('Document "' + item.fsDocumentId + '" removed from local collection.');
-                    logging.debug('You\'re not using Two-Way binding, please use .detach() in stead of .remove() to persist the change when syncing to Firestore');
-                }
+            }
+            else {
+                logging.debug('Adding new document to local collection only');
+                item.state(1); /* NEW */
+                item.fsBaseCollection = this.fsCollection;
+            }
 
-                break;
+            break;
+        case 'deleted':
+            if (this.twoWayBinding) {
+                logging.debug('Deleting document "' + item.fsDocumentId + '" from Firestore collection "' + this.fsCollection.id + '"');
+
+                item.fsBaseCollection.doc(item.fsDocumentId).delete().catch(function (error) {
+                    logging.error('Error deleting Firestore document :', error);
+                });
+            }
+            else {
+                logging.debug('Document "' + item.fsDocumentId + '" removed from local collection.');
+                logging.debug('You\'re not using Two-Way binding, please use .detach() in stead of .remove() to persist the change when syncing to Firestore');
+            }
+
+            break;
         }
     }
 }

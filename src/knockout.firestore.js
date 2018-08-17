@@ -1,15 +1,16 @@
+/* global require ko exports kofs */
 'use strict';
+
 var modelExtensions = require('./ModelExtensions');
 var observableArrayExtensions = require('./ObservableArrayExtensions');
 var logging = require('./Logging');
-
 
 /* WHILE 3.5.0 OF KNOCKOUT IS STILL RC */
 if (typeof ko.isObservableArray === 'undefined') {
     ko.isObservableArray = function (instance) {
         return ko.isObservable(instance)
-            && typeof instance["remove"] == "function"
-            && typeof instance["push"] == "function";
+            && typeof instance['remove'] == 'function'
+            && typeof instance['push'] == 'function';
     };
 }
 /* END OF 3.5.0 FUNCTIONALITY */
@@ -21,7 +22,7 @@ exports.getBoundCollection = function (fsCollection, object, options) {
     kofs.bindCollection(collection, fsCollection, object, options);
 
     return collection;
-}
+};
 
 exports.bindCollection = function (observableArray, fsCollection, object, options) {
     /* settings */
@@ -49,8 +50,9 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
         snapshot.docChanges().forEach(function (change) {
             /* ignore local changes */
             if (!change.doc.metadata.hasPendingWrites) {
+                var localDoc;
 
-                if (change.type === "added") {
+                if (change.type === 'added') {
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
                     var index = change.newIndex;
@@ -73,9 +75,9 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     observableArray.splice(index, 0, item);
                     observableArray.localOnly = false;
                 }
-                if (change.type === "modified") {
+                if (change.type === 'modified') {
                     logging.debug('Firestore object ' + change.doc.id + ' modified');
-                    var localDoc = observableArray.getDocument(change.doc.id);
+                    localDoc = observableArray.getDocument(change.doc.id);
                     if (localDoc != null) {
                         /* explode the data, but don't mess with the deep includes */
                         explodeObject(change.doc, localDoc, false);
@@ -84,9 +86,9 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                         logging.debug('Firestore object ' + change.doc.id + ' not found in local collection');
                     }
                 }
-                if (change.type === "removed") {
+                if (change.type === 'removed') {
                     logging.debug('Firestore object ' + change.doc.id + ' removed from collection');
-                    var localDoc = observableArray.getDocument(change.doc.id);
+                    localDoc = observableArray.getDocument(change.doc.id);
                     if (localDoc != null) {
                         observableArray.localOnly = true;
                         observableArray.remove(localDoc);
@@ -104,7 +106,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
         /* set indicator that the initial load is completed. Can be used to pause subscriptions on initial load */
         observableArray.initialLoading = false;
     });
-}
+};
 
 function explodeObject(firestoreDocument, localObject, deepInclude) {
     /* during update set lock on the file, so there will be no update loop */
@@ -128,18 +130,18 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
             propertyData = firestoreDocument.get(propertyName);
 
             switch (typeof propertyData) {
-                case 'undefined':
-                    break;
-                case 'string':
-                case 'number':
-                case 'boolean':
-                    property(propertyData);
-                    break;
-                case 'object':
-                    if (typeof propertyData.toDate === 'function') { /* assume Firestore.Timestamp */
-                        property(propertyData.toDate());
-                    }
-                    break;
+            case 'undefined':
+                break;
+            case 'string':
+            case 'number':
+            case 'boolean':
+                property(propertyData);
+                break;
+            case 'object':
+                if (typeof propertyData.toDate === 'function') { /* assume Firestore.Timestamp */
+                    property(propertyData.toDate());
+                }
+                break;
             }
         }
 
@@ -170,10 +172,11 @@ function createFirestoreQuery(collection, where, orderBy) {
     /* convert our where and orderby arrays to real Firestore queries */
 
     var query = collection;
+    var index;
 
     if (where != null && Array.isArray(where) && where.length > 0) {
         if (Array.isArray(where[0])) {
-            for (var index in where) {
+            for (index in where) {
                 var whereClause = where[index];
 
                 query = query.where(whereClause[0], whereClause[1], whereClause[2]);
@@ -186,7 +189,7 @@ function createFirestoreQuery(collection, where, orderBy) {
 
     if (orderBy != null && Array.isArray(orderBy) && orderBy.length > 0) {
         if (Array.isArray(orderBy[0])) {
-            for (var index in orderBy) {
+            for (index in orderBy) {
                 var orderByClause = orderBy[index];
 
                 query = query.orderBy(orderByClause[0], whereClause[1]);

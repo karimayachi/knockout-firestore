@@ -1,9 +1,10 @@
+/* global ko firebase kofs */
 'use strict';
 
 /* globals */
 var db; // database reference
 
-document.addEventListener("DOMContentLoaded", function() { 
+document.addEventListener('DOMContentLoaded', function() { 
     var settingsViewModel = new SettingsViewModel();
 
     ko.applyBindings(settingsViewModel, document.getElementById('settingsview'));
@@ -38,13 +39,13 @@ function SettingsViewModel () {
             twoWayBinding: this.twoWayBinding(),
             orderBy: ['createDate', 'asc'],
             includes: { actions: { class: Action, orderBy: ['percentageFinished', 'desc'] } }
-        }
+        };
 
         
         var todoViewModel = new TodoViewModel();
         todoViewModel.todoItems = kofs.getBoundCollection(collection, TodoItem, options);
         ko.applyBindings(todoViewModel, document.getElementById('contentview'));
-    }
+    };
 }
 
 function TodoViewModel () {
@@ -52,32 +53,32 @@ function TodoViewModel () {
 
     this.add = function() {
         self.todoItems.push(new TodoItem());
-    }
+    };
 
     this.remove = function(item) {
         self.todoItems.detach(item);
-    }
+    };
 
     this.save = function() {
         self.todoItems.saveAll();
-    }
- }
+    };
+}
 
 function TodoItem () {
     var self = this;
 
-     this.title = ko.observable();
-     this.description = ko.observable();
-     this.finished = ko.observable(false);
-     this.createDate = ko.observable(new Date());
-     this.actions = ko.observableArray();
+    this.title = ko.observable();
+    this.description = ko.observable();
+    this.finished = ko.observable(false);
+    this.createDate = ko.observable(new Date());
+    this.actions = ko.observableArray();
 
-     this.addAction = function () {
+    this.addAction = function () {
         self.actions.push(new Action());
-     }
- }
+    };
+}
 
- function Action () {
+function Action () {
     var self = this;
 
     this.title = ko.observable();
@@ -88,5 +89,5 @@ function TodoItem () {
         if(perc <= 90) {
             self.percentageFinished(perc + 10);
         }
-     }
+    };
 }

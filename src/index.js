@@ -1,3 +1,4 @@
+/* global require */
 'use strict';
 
 /* expose the library to the global scope */

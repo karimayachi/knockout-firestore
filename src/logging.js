@@ -1,10 +1,12 @@
+/* global exports */
+/* eslint-disable no-console */
 'use strict';
 
 localStorage.logLevel = 1;
 
 exports.setLogLevel = function(level) {
     localStorage.logLevel = level;
-}
+};
 
 exports.debug = function() {
     if(localStorage.logLevel == 2) {
@@ -12,7 +14,7 @@ exports.debug = function() {
         args.unshift('[KOFS]');
         console.debug.apply(console, args);
     }
-}
+};
 
 exports.error = function() {
     if(localStorage.logLevel > 0) {
@@ -20,4 +22,4 @@ exports.error = function() {
         args.unshift('[KOFS]');
         console.error.apply(console, args);
     }
-}
+};

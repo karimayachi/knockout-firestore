@@ -1,3 +1,4 @@
+/* global require exports ko */
 'use strict';
 
 var logging = require('./Logging');
@@ -61,7 +62,7 @@ exports.extendObservable = function (document, includes) {
             })(propertyName);
         }
     }
-}
+};
 
 function getFlatDocument() {
     var document = {};
