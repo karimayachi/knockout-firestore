@@ -456,7 +456,7 @@ function explodeObject(firestoreDocument, localObject, deepInclude) {
                     property(propertyData);
                     break;
                 case 'object':
-                    if (typeof propertyData.toDate === 'function') { /* assume Firestore.Timestamp */
+                    if (propertyData && typeof propertyData.toDate === 'function') { /* assume Firestore.Timestamp */
                         property(propertyData.toDate());
                     }
                     break;
