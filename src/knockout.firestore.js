@@ -38,16 +38,24 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
     /* create the Firestore query from the collection and the options */
     var query = createFirestoreQuery(fsCollection, where, orderBy);
 
-    /* extend the observableArray with our functions */
-    observableArrayExtensions.extendObservableArray(observableArray);
-    observableArray.twoWayBinding = twoWayBinding;
-    observableArray.fsQuery = query;
-    observableArray.fsCollection = fsCollection;
-    observableArray.includes = includes;
+    /* extend the observableArray with our functions or clear the already bound observableArray */
+    if (typeof observableArray.fsCollection === 'undefined') {
+        observableArrayExtensions.extendObservableArray(observableArray);
+        observableArray.twoWayBinding = twoWayBinding;
+        observableArray.fsQuery = query;
+        observableArray.fsCollection = fsCollection;
+        observableArray.includes = includes;
+    }
+    else {
+        observableArray.localOnly = true;
+        observableArray.removeAll();
+        observableArray.localOnly = false;
+    }
 
     /* subscribe to the Firestore collection */
     query.onSnapshot(function (snapshot) {
         snapshot.docChanges().forEach(function (change) {
+
             /* ignore local changes */
             if (!change.doc.metadata.hasPendingWrites) {
                 var localDoc;
@@ -56,7 +64,7 @@ exports.bindCollection = function (observableArray, fsCollection, object, option
                     logging.debug('Firestore object ' + change.doc.id + ' added to collection');
                     var item = new object();
                     var index = change.newIndex;
-                    
+
                     /* extend the Model with the ObservableDocument functionality */
                     var combinedIncludes = Object.assign(includes, item.includes);
                     modelExtensions.extendObservable(item, combinedIncludes);
