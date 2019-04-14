@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function SettingsViewModel () {
-    this.apiKey = ko.observable('');
-    this.authDomain = ko.observable('');
-    this.projectId = ko.observable('');
+    this.apiKey = ko.observable('AIzaSyBkdQdHRcJPRobG4VMq6ttnCtF4fr8-6XY');
+    this.authDomain = ko.observable('reflexo-a6432.firebaseapp.com');
+    this.projectId = ko.observable('reflexo-a6432');
     this.collection = ko.observable('todoItems');
     this.logLevel = ko.observable(0);
     this.twoWayBinding = ko.observable(true);
@@ -28,7 +28,6 @@ function SettingsViewModel () {
 
             /* initialize Cloud Firestore through Firebase */
             db = firebase.firestore();
-            db.settings({ timestampsInSnapshots: true });
         }
 
         var collection = db.collection(this.collection());
@@ -37,7 +36,7 @@ function SettingsViewModel () {
             logLevel: this.logLevel(),
             twoWayBinding: this.twoWayBinding(),
             orderBy: ['createDate', 'asc'],
-            includes: { actions: { class: Action, orderBy: ['percentageFinished', 'desc'] } }
+            /* includes: { actions: { class: Action, orderBy: ['percentageFinished', 'desc'] } } */
         }
 
         

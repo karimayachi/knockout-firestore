@@ -1,25 +1,142 @@
-import ko from 'knockout';
+import knockout, { Observable, PureComputed } from 'knockout';
+import { firestore } from 'firebase';
+import { mergeObjects } from './helpers';
 
-interface Bindable {
-    fsDocumentId: string;
-    fsBaseCollection: any;
-    includes: any;
+declare var ko: typeof knockout; /* alias the namespace to avoid importing the module, but still use the typings */
+
+export type Bindable<T> = ModelExtensions & T;
+
+export class ModelExtensions {
+    fsDocumentId?: string;
+    fsBaseCollection?: firestore.CollectionReference;
+    includes?: { property: { class: new () => any, orderBy: string[] | string[][] } };
     lock: boolean;
     twoWayBinding: boolean;
-}
-
-class Model {
-    id: number;
-    title: string;
-    description: string;
+    state: Observable<number>;
+    modified: PureComputed<boolean>; /* Why is this hidden again? */
 
     constructor() {
-        this.id = 0;
-        this.title = '';
-        this.description = '';
+        this.lock = false;
+        this.twoWayBinding = true;
+
+        this.state = ko.observable(0); /* UNCHANGED */
+        this.modified = ko.pureComputed((): boolean => {
+            return this.state() != 0;
+        });
+
+        /* Don't use decorators or end up in Prototype Hell */
+        Object.defineProperty(this, 'state', {
+            enumerable: false,
+            configurable: false,
+            writable: false
+        });
+
+        Object.defineProperty(this, 'modified', {
+            enumerable: false,
+            configurable: false,
+            writable: false
+        });
+    }
+
+    getFlatDocument(): any {
+        let document: any = {};
+
+        /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
+         * getOwnPropertyNames(), because the latter also returns non-enumerables */
+        for (let key of Object.keys(this)) {
+            if (!this.hasOwnProperty(key)) continue;
+
+            let property: any = (<any>this)[key];
+
+            /* flatten properties, except computed and deep includes */
+            if (ko.isObservable(property) &&
+                !ko.isComputed(property) &&
+                !(<any>this.includes)[key]) {
+                let propertyValue: any;
+                if (typeof property() === 'boolean' || typeof property() === 'number') {
+                    propertyValue = property(); /* 0 or false should just be inserted as a value */
+                }
+                else {
+                    propertyValue = property() || ''; /* but not null, undefined or the likes */
+                }
+
+                document[key] = propertyValue;
+            }
+        }
+
+        return document;
+    }
+
+    save(): void {
+        if (this.state() == 0) {
+            //logging.debug('Firestore document ' + this.fsDocumentId + ' unchanged');
+            return;
+        }
+
+        if (this.fsBaseCollection === undefined) {
+            //logging.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
+            return;
+        }
+
+        let thisDocument: any = this.getFlatDocument();
+
+        if (this.state() == 1) { /* NEW */
+            this.fsBaseCollection.add(thisDocument).then((doc: firestore.DocumentReference): void => {
+                //logging.debug('Firestore document ' + doc.id + ' added to database');
+                this.fsDocumentId = doc.id;
+                if (this.state() == 2) { /* document was modified while saving */
+                    //logging.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
+                    this.save();
+                }
+                else {
+                    this.state(0);
+                }
+            }).catch((error: any): void => {
+                //logging.error('Error adding Firestore document :', error);
+            });
+        }
+        else if (this.state() == 2) { /* MODIFIED */
+            this.fsBaseCollection.doc(this.fsDocumentId).update(thisDocument).then((): void => {
+                //logging.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
+                this.state(0);
+            }).catch((error: any): void => {
+                //logging.error('Error saving Firestore document :', error);
+            });
+        }
+        else if (this.state() == 3) { /* DELETED */
+            this.fsBaseCollection.doc(this.fsDocumentId).delete().then((): void => {
+                //logging.debug('Firestore document ' + this.fsDocumentId + ' deleted from database');
+            }).catch((error: any): void => {
+                //logging.error('Error saving Firestore document :', error);
+            });
+        }
+    }
+
+    saveProperty(property: string, value: any): void {
+        let doc: any = {};
+        doc[property] = value;
+
+        if (this.fsBaseCollection === undefined) {
+            //logging.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
+            return;
+        }
+
+        /* it can happen that a property change triggers saveProperty,
+         * while the document is not yet properly saved in Firestore and
+         * has no fsDocumentId yet. In that case don't save to Firestore,
+         * but record the change and mark this document MODIFIED */
+        if (typeof this.fsDocumentId === 'undefined') {
+            this.state(2); // MODIFIED
+        }
+        else {
+            this.fsBaseCollection.doc(this.fsDocumentId).update(doc).then((): void => {
+                //logging.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
+            }).catch((error: any): void => {
+                //logging.error('Error saving Firestore document :', error);
+            });
+        }
     }
 }
-
 
 /**
  * Creates a bindable from the given object and optionally the deep includes
@@ -27,160 +144,43 @@ class Model {
  * @param model the object to be made bindable
  * @param includes (optional) the deep includes for eager loading
  */
-export function createBindable<T>(model: T, includes?: any): Bindable & T {
-    return <Bindable & T>model;
-}
+export function createBindable<T>(model: T, includes?: any): Bindable<T> {
 
-exports.extendObservable = function (document, includes) {
-    document.fsDocumentId;
-    document.fsBaseCollection;
-    document.includes = Object.assign(includes || {}, document.includes);
-    document.lock = false;
-    document.twoWayBinding = true;
+    let extension = new ModelExtensions();
 
-    /* create 'hidden' observables to track changes */
-    Object.defineProperty(document, 'state', {
-        enumerable: false,
-        configurable: false,
-        writable: false,
-        value: ko.observable(0) /* UNCHANGED */
-    });
-    Object.defineProperty(document, 'modified', {
-        enumerable: false,
-        configurable: false,
-        writable: false,
-        value: ko.pureComputed(function () {
-            return document.state() != 0;
-        })
-    });
+    let bindableModel: Bindable<T> = mergeObjects(model, extension);
 
-    /* extend the prototype (the same protoype will be extended for each instance: TODO: OPTIMIZE) */
-    document.__proto__.saveProperty = saveProperty;
-    document.__proto__.getFlatDocument = getFlatDocument;
-    document.__proto__.save = save;
+    bindableModel.includes = Object.assign(includes || {}, bindableModel.includes);
 
     /* subscribe to the Knockout changes
      * enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
      * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for (var index in Object.keys(document)) {
-        var propertyName = Object.keys(document)[index];
+    for (let key of Object.keys(bindableModel)) {
+        if (!bindableModel.hasOwnProperty(key)) continue;
 
-        if (!document.hasOwnProperty(propertyName)) continue;
-
-        var property = document[propertyName];
+        let property: any = (<any>bindableModel)[key];
 
         /* Bind listeners to the properties */
         if (ko.isObservable(property) &&
-            (!ko.isObservableArray(property) || !document.includes[propertyName]) &&
+            (!ko.isObservableArray(property) || !(<any>bindableModel.includes)[key]) &&
             !ko.isComputed(property)) {
-            (function (elementName) {
-                property.subscribe(function (value) {
-                    logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + document.lock);
+            ((elementName: string): void => {
+                property.subscribe((value: any): void => {
+                    //logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + bindableModel.lock);
 
                     /* ignore updates triggered by incoming changes from Firebase */
-                    if (!document.lock) {
-                        if (document.twoWayBinding) {
-                            document.saveProperty(elementName, value);
+                    if (!bindableModel.lock) {
+                        if (bindableModel.twoWayBinding) {
+                            bindableModel.saveProperty(elementName, value);
                         }
-                        else if (document.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
-                            document.state(2); /* MODIFIED */
+                        else if (bindableModel.state() != 1) { /* if state is NEW keep it in this state untill it is saved, even if it's modified in the mean time */
+                            bindableModel.state(2); /* MODIFIED */
                         }
                     }
                 });
-            })(propertyName);
-        }
-    }
-}
-
-function getFlatDocument() {
-    var document = {};
-
-    /* enumerate using keys() and filter out protoype functions with hasOwnProperty() in stead of using 
-     * getOwnPropertyNames(), because the latter also returns non-enumerables */
-    for (var index in Object.keys(this)) {
-        var propertyName = Object.keys(this)[index];
-
-        if (!this.hasOwnProperty(propertyName)) continue;
-
-        var property = this[propertyName];
-
-        /* flatten properties, except computed and deep includes */
-        if (ko.isObservable(property) &&
-            !ko.isComputed(property) &&
-            !this.includes[propertyName]) {
-            var propertyValue;
-            if (typeof property() === 'boolean' || typeof property() === 'number') {
-                propertyValue = property(); /* 0 or false should just be inserted as a value */
-            }
-            else {
-                propertyValue = property() || ''; /* but not null, undefined or the likes */
-            }
-
-            document[propertyName] = propertyValue;
+            })(key);
         }
     }
 
-    return document;
-}
-
-function save() {
-    if (this.state() == 0) {
-        logging.debug('Firestore document ' + this.fsDocumentId + ' unchanged');
-        return;
-    }
-
-    var self = this;
-    var thisDocument = this.getFlatDocument();
-
-    if (self.state() == 1) { /* NEW */
-        this.fsBaseCollection.add(thisDocument).then(function (doc) {
-            logging.debug('Firestore document ' + doc.id + ' added to database');
-            self.fsDocumentId = doc.id;
-            if (self.state() == 2) { /* document was modified while saving */
-                logging.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
-                self.save();
-            }
-            else {
-                self.state(0);
-            }
-        }).catch(function (error) {
-            logging.error('Error adding Firestore document :', error);
-        });
-    }
-    else if (self.state() == 2) { /* MODIFIED */
-        this.fsBaseCollection.doc(this.fsDocumentId).update(thisDocument).then(function () {
-            logging.debug('Firestore document ' + self.fsDocumentId + ' saved to database');
-            self.state(0);
-        }).catch(function (error) {
-            logging.error('Error saving Firestore document :', error);
-        });
-    }
-    else if (self.state() == 3) { /* DELETED */
-        this.fsBaseCollection.doc(this.fsDocumentId).delete().then(function () {
-            logging.debug('Firestore document ' + self.fsDocumentId + ' deleted from database');
-        }).catch(function (error) {
-            logging.error('Error saving Firestore document :', error);
-        });
-    }
-}
-
-function saveProperty(property, value) {
-    var self = this;
-    var doc = {};
-    doc[property] = value;
-
-    /* it can happen that a property change triggers saveProperty,
-     * while the document is not yet properly saved in Firestore and
-     * has no fsDocumentId yet. In that case don't save to Firestore,
-     * but record the change and mark this document MODIFIED */
-    if (typeof this.fsDocumentId === 'undefined') {
-        this.state(2); // MODIFIED
-    }
-    else {
-        this.fsBaseCollection.doc(this.fsDocumentId).update(doc).then(function () {
-            logging.debug('Firestore document ' + self.fsDocumentId + ' saved to database');
-        }).catch(function (error) {
-            logging.error('Error saving Firestore document :', error);
-        });
-    }
+    return bindableModel;
 }
