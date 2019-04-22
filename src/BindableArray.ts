@@ -1,7 +1,7 @@
 import knockout, { ObservableArray, utils } from 'knockout';
 import { firestore } from 'firebase';
 import { Bindable, createBindable, ModelExtensions } from './Bindable';
-import { mergeObjects } from './helpers';
+import { mergeObjects } from './mergeObjects';
 import { kofs } from './knockout-firestore';
 
 declare var ko: typeof knockout; /* alias the namespace to avoid importing the module, but still use the typings */
