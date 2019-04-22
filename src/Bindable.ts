@@ -114,7 +114,19 @@ export class ModelExtensions {
 
     saveProperty(property: string, value: any): void {
         let doc: any = {};
-        doc[property] = value;
+
+        if (typeof value == 'number' ||
+            typeof value == 'string' ||
+            typeof value == 'boolean') {
+            doc[property] = value;
+        }
+        else if (Array.isArray(value)) { /* only serialize non-complex elements.. TODO: serialize knockout observables */
+            doc[property] = value.filter((value: any) => {
+                return typeof value == 'number' ||
+                    typeof value == 'string' ||
+                    typeof value == 'boolean';
+            });
+        }
 
         if (this.fsBaseCollection === undefined) {
             //logging.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');

@@ -1,12 +1,9 @@
 export function mergeObjects<TTarget, TSource>(target: TTarget, source: TSource): TTarget & TSource {
 
     let newTarget: TTarget & TSource = <TTarget & TSource>target;
-
-    /* insert the prototype of source into target prototype chain (just one level deep) */
     let pSource: any = Object.getPrototypeOf(source);
-    let pTarget: any = Object.getPrototypeOf(target);
-    Object.setPrototypeOf(pSource, pTarget);
-    Object.setPrototypeOf(target, pSource);
+    
+    addPrototypeToEndOfChain(target, pSource);
 
     /* copy the properties (not on the prototype chain, but including the non-enumerable) to the target */
     for (let key of Object.getOwnPropertyNames(source)) {
@@ -21,4 +18,17 @@ export function mergeObjects<TTarget, TSource>(target: TTarget, source: TSource)
     }
 
     return newTarget;
+}
+
+function addPrototypeToEndOfChain(chain: any, prototype: any) {
+    let pTarget: any = Object.getPrototypeOf(chain);
+
+    if(pTarget === prototype) {  /* prototype already added to this chain */
+    }
+    else if(pTarget === Object.prototype || pTarget === Function.prototype) { /* end of chain: add prototype */
+        Object.setPrototypeOf(chain, prototype);
+    }
+    else { /* recursive go down chain */
+        addPrototypeToEndOfChain(pTarget, prototype);
+    }
 }
