@@ -3,7 +3,7 @@ import { ObservableArray, utils } from 'knockout';
 import { firestore } from 'firebase';
 import { Bindable, createBindable, ModelExtensions } from './Bindable';
 import { mergeObjects } from './mergeObjects';
-import { bindCollection } from './knockout-firestore';
+import { bindCollection } from './index';
 
 export type BindableArray<T> = ObservableArray<T> & ArrayExtensions<T>;
 
