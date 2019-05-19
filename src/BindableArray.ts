@@ -17,6 +17,7 @@ export class ArrayExtensions<T> {
     constructor() {
         this.localOnly = false;
         this.twoWayBinding = false;
+        console.log('Hallo vanuit BindableArray.ts');
     }
 
     getDocument(id: string): Bindable<T> | null {

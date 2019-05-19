@@ -2,7 +2,8 @@ const path = require('path');
 
 module.exports = {
     entry: './src/index.ts',
-    mode: "development",
+    mode: 'development',
+    devtool: 'cheap-module-eval-source-map',
     module: {
         rules: [
             {
@@ -17,8 +18,8 @@ module.exports = {
     },
     output: {
         filename: 'knockout.firestore.js',
-        path: path.resolve(__dirname, 'dist'),
-        library: "kofs"
+        path: path.resolve(__dirname, '../dist'),
+        library: 'kofs'
     },
     externals: {
         knockout: 'ko'

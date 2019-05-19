@@ -3,7 +3,8 @@
     "version": "1.1.0",
     "license": "MIT",
     "scripts": {
-        "build": "webpack"
+        "build-dev": "webpack --config build-scripts/webpack.dev.js",
+        "build-prod": "webpack --config build-scripts/webpack.prod.js"
     },
     "dependencies": {},
     "devDependencies": {
