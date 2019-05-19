@@ -1,10 +1,8 @@
-import knockout, { ObservableArray, utils } from 'knockout';
+import ko, { ObservableArray, utils } from 'knockout';
 import { firestore } from 'firebase';
 import { Bindable, createBindable, ModelExtensions } from './Bindable';
 import { mergeObjects } from './mergeObjects';
 import { kofs } from './knockout-firestore';
-
-declare var ko: typeof knockout; /* alias the namespace to avoid importing the module, but still use the typings */
 
 export type BindableArray<T> = ObservableArray<T> & ArrayExtensions<T>;
 
@@ -22,7 +20,7 @@ export class ArrayExtensions<T> {
 
     getDocument(id: string): Bindable<T> | null {
         /* assume 'this' is merged with an ObservableArray */
-        let contents: T[] = (<BindableArray<T>><unknown>this)();
+        let contents: T[] = (<BindableArray<T>><any>this)();
 
         for (let doc of contents) {
             /* assume all documents are converted to Bindable */
@@ -37,7 +35,7 @@ export class ArrayExtensions<T> {
 
     detach(item: T): void {
         /* assume 'this' is merged with an ObservableArray */
-        let observableArray: BindableArray<T> = (<BindableArray<T>><unknown>this);
+        let observableArray: BindableArray<T> = (<BindableArray<T>><any>this);
 
         /* if this collection is Two-Way bound, just delete */
         if (observableArray.twoWayBinding) {
@@ -56,7 +54,7 @@ export class ArrayExtensions<T> {
 
     saveAll(): void {
         /* assume 'this' is merged with an ObservableArray */
-        let contents: T[] = (<BindableArray<T>><unknown>this)();
+        let contents: T[] = (<BindableArray<T>><any>this)();
 
         for (let item of contents) {
             /* assume all items are converted to Bindable */

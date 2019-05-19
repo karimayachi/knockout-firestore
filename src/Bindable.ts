@@ -1,8 +1,6 @@
-import knockout, { Observable, PureComputed } from 'knockout';
+import ko, { Observable, PureComputed } from 'knockout';
 import { firestore } from 'firebase';
 import { mergeObjects } from './mergeObjects';
-
-declare var ko: typeof knockout; /* alias the namespace to avoid importing the module, but still use the typings */
 
 export type Bindable<T> = ModelExtensions & T;
 

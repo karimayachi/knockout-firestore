@@ -1,9 +1,7 @@
 import { firestore } from 'firebase';
-import knockout, { ObservableArray } from 'knockout';
+import ko, { ObservableArray } from 'knockout';
 import { BindableArray, createBindableArray } from './BindableArray';
 import { Bindable, createBindable } from './Bindable';
-
-declare var ko: typeof knockout; /* alias the namespace to avoid importing the module, but still use the typings */
 
 export namespace kofs {
     export interface KofsOptions {
