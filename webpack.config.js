@@ -17,14 +17,16 @@ module.exports = {
     },
     output: {
         filename: 'knockout.firestore.js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, 'dist'),
+        library: "kofs"
     },
     externals: {
-        knockout: {
-            commonjs: 'knockout',
-            commonjs2: 'knockout',
-            amd: 'knockout',
-            root: 'ko'
-        }
+        knockout: 'ko'
+        // knockout: {
+        //     commonjs: 'knockout',
+        //     commonjs2: 'knockout',
+        //     amd: 'knockout',
+        //     root: 'ko'
+        // }
     }
 };

@@ -1,4 +1,5 @@
-import ko, { Observable, PureComputed } from 'knockout';
+import * as ko from 'knockout';
+import { Observable, PureComputed } from 'knockout';
 import { firestore } from 'firebase';
 import { mergeObjects } from './mergeObjects';
 

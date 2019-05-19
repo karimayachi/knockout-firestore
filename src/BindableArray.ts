@@ -1,8 +1,9 @@
-import ko, { ObservableArray, utils } from 'knockout';
+import * as ko from 'knockout';
+import { ObservableArray, utils } from 'knockout';
 import { firestore } from 'firebase';
 import { Bindable, createBindable, ModelExtensions } from './Bindable';
 import { mergeObjects } from './mergeObjects';
-import { kofs } from './knockout-firestore';
+import { bindCollection } from './knockout-firestore';
 
 export type BindableArray<T> = ObservableArray<T> & ArrayExtensions<T>;
 
@@ -154,7 +155,7 @@ function createAndBindDeepIncludes<T>(item: Bindable<T>) {
                 .doc(item.fsDocumentId)
                 .collection(key);
 
-            kofs.bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy });
+            bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy });
 
             /* if the collection was locally already filled with data */
             /* TODO: Transaction for speed */

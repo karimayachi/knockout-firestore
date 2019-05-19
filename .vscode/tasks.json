@@ -10,9 +10,9 @@
             "problemMatcher": [
                 "$tsc-watch"
             ],
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
+            // "runOptions": {
+            //     "runOn": "folderOpen"
+            // }
         },
         {
             "type": "typescript",
