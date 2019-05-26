@@ -71,10 +71,22 @@ export class ArrayExtensions<T> {
 export function createBindableArray<T>(koObservableArray: ObservableArray<T>): BindableArray<T> {
 
     let extension: ArrayExtensions<T> = new ArrayExtensions();
+    let bindableArray: BindableArray<T>;
 
-    let bindableArray: BindableArray<T> = mergeObjects(koObservableArray, extension);
-    bindableArray.subscribe<BindableArray<T>>(collectionChanged, bindableArray, 'arrayChange');
-
+    if((<BindableArray<T>>koObservableArray).fsQuery) {
+        /* if already bound, don't rebind, but do clear, localOnly
+         * Assume bound when fsQuery property is found on the object */
+        bindableArray = <BindableArray<T>>koObservableArray;
+        bindableArray.localOnly = true;
+        bindableArray.removeAll();
+        bindableArray.localOnly = false;
+    }
+    else {
+        /* bind */
+        bindableArray = mergeObjects(koObservableArray, extension);
+        bindableArray.subscribe<BindableArray<T>>(collectionChanged, bindableArray, 'arrayChange');
+    }
+    
     return bindableArray;
 }
 
