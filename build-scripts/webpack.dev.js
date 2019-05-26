@@ -20,16 +20,16 @@ module.exports = {
     output: {
         filename: 'knockout.firestore.js',
         path: path.resolve(__dirname, '../dist'),
-        library: 'kofs'
+        library: 'kofs',
+        libraryTarget: 'umd'
     },
     externals: {
-        knockout: 'ko'
-        // knockout: {
-        //     commonjs: 'knockout',
-        //     commonjs2: 'knockout',
-        //     amd: 'knockout',
-        //     root: 'ko'
-        // }
+        knockout: {
+            commonjs: 'knockout',
+            commonjs2: 'knockout',
+            amd: 'knockout',
+            root: 'ko'
+        }
     },
     plugins: [
         new CleanWebpackPlugin()
