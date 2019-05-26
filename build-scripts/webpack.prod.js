@@ -1,4 +1,5 @@
 const path = require('path');
+const CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
     entry: './src/index.ts',
@@ -29,5 +30,8 @@ module.exports = {
         //     amd: 'knockout',
         //     root: 'ko'
         // }
-    }
+    },
+    plugins: [
+        new CleanWebpackPlugin()
+    ]
 };

@@ -9,6 +9,7 @@
     "dependencies": {},
     "devDependencies": {
         "@types/knockout": "^3.4.64",
+        "clean-webpack-plugin": "^2.0.2",
         "firebase": "^5.9.4",
         "ts-loader": "^6.0.1",
         "typescript": "^3.4.5",
