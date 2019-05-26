@@ -1,17 +1,28 @@
 {
     "name": "knockout-firebase",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "license": "MIT",
+    "description": "A reactive two-way binding between Knockout's MVVM based observable objects and Firebase' Firestore.",
+    "main": "dist/knockout.firestore.min.js",
+    "types": "dist/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/karimayachi/knockout-firestore.git"
+    },
+    "keywords": [ "knockout", "firestore", "firebase", "mvvm", "reactive", "two-way" ],
+    "author": "Karim Ayachi",
     "scripts": {
         "build-dev": "webpack --config build-scripts/webpack.dev.js",
-        "build-prod": "webpack --config build-scripts/webpack.prod.js"
+        "build-prod": "webpack --config build-scripts/webpack.prod.js",
+        "prepare": "npm run build-prod"
     },
+    "files": [ "dist/**/*" ],
     "dependencies": {},
     "peerDependencies": {
         "knockout": "^3.5.0"
     },
     "devDependencies": {
-        "@types/knockout": "^3.4.64",
+        "knockout": "^3.5.0",
         "clean-webpack-plugin": "^2.0.2",
         "firebase": "^5.9.4",
         "ts-loader": "^6.0.1",
