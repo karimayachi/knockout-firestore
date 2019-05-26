@@ -7,6 +7,9 @@
         "build-prod": "webpack --config build-scripts/webpack.prod.js"
     },
     "dependencies": {},
+    "peerDependencies": {
+        "knockout": "^3.5.0"
+    },
     "devDependencies": {
         "@types/knockout": "^3.4.64",
         "clean-webpack-plugin": "^2.0.2",
