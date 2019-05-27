@@ -5,11 +5,13 @@ import { BindableArray, createBindableArray } from './BindableArray';
 import { Bindable, createBindable } from './Bindable';
 
 export interface KofsOptions {
-    where?: string[] | string[][];
-    orderBy: string[] | string[][];
-    includes?: { [key: string]: { class: new () => any, orderBy: string[] | string[][] } };
-    twoWayBinding: boolean;
+    where?: [string, string, any] | [string, string, any][];
+    orderBy?: [string, string] | [string, string][];
+    includes?: { [key: string]: { class: new () => any, orderBy: [string, string] | [string, string][] } };
+    twoWayBinding?: boolean;
 }
+
+export { BindableArray, Bindable };
 
 export function getBoundCollection<T>(fsCollection: firestore.CollectionReference, model: new () => T, options: any): BindableArray<T> {
     /* create the collection as a ko.observableArray and bind it */
@@ -178,7 +180,7 @@ function explodeObject<T>(firestoreDocument: firestore.QueryDocumentSnapshot, lo
             ko.isObservableArray(property) &&
             (<any>localObject.includes)[key] &&
             localObject.fsBaseCollection !== undefined) {
-            let include: { class: new () => any, orderBy: string[] | string[][] } = (<any>localObject.includes)[key];
+            let include: { class: new () => any, orderBy: [string, string] | [string, string][] } = (<any>localObject.includes)[key];
             let collectionRef: firestore.CollectionReference = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(key);
             bindCollection(property, collectionRef, include.class, { twoWayBinding: localObject.twoWayBinding, orderBy: include.orderBy });
         }
