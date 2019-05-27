@@ -5,15 +5,16 @@ import { BindableArray, createBindableArray } from './BindableArray';
 import { Bindable, createBindable } from './Bindable';
 
 export interface KofsOptions {
-    where?: [string, string, any] | [string, string, any][];
-    orderBy?: [string, string] | [string, string][];
-    includes?: { [key: string]: { class: new () => any, orderBy: [string, string] | [string, string][] } };
-    twoWayBinding?: boolean;
+    where: [string, string, any] | [string, string, any][];
+    orderBy: [string, string] | [string, string][];
+    includes: { [key: string]: { class: new () => any, orderBy: [string, string] | [string, string][] } };
+    twoWayBinding: boolean;
+    logLevel: number
 }
 
 export { BindableArray, Bindable };
 
-export function getBoundCollection<T>(fsCollection: firestore.CollectionReference, model: new () => T, options: any): BindableArray<T> {
+export function getBoundCollection<T>(fsCollection: firestore.CollectionReference, model: new () => T, options: Partial<KofsOptions>): BindableArray<T> {
     /* create the collection as a ko.observableArray and bind it */
     let observableArray: ObservableArray<T> = ko.observableArray();
 
@@ -22,7 +23,7 @@ export function getBoundCollection<T>(fsCollection: firestore.CollectionReferenc
     return <BindableArray<T>>observableArray;
 }
 
-export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollection: firestore.CollectionReference, model: new () => T, options: KofsOptions): void {
+export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollection: firestore.CollectionReference, model: new () => T, options: Partial<KofsOptions>): void {
     /* settings */
     options = options || {};
     let where = options.where || [];
