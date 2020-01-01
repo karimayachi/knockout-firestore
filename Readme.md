@@ -4,7 +4,7 @@ The `knockout-firestore` (KOFS) package provides an two-way binding between [Kno
 
 It offers a lightweight interface to to create true MVVM applications in the browser, backed by realtime database storage.
 
-KOFS is build in Javascript and it extends your view model and the `ko.ObservableArray` of Knockout. You can use it in any browser based Javascript project that meets the prerequisites below.
+KOFS is build in TypeScript and it extends your view model and the `ko.ObservableArray` of Knockout. You can use it in any browser based JavaScript project that meets the prerequisites below.
 
 It aims at being simple, clean, lightweight and without dependencies on frameworks (other than Knockout and Firebase ofcourse). 
 
@@ -36,13 +36,11 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
 
 ### For using KOFS
 - Knockout
-- Firebase Javascript API
+- Firebase JavaScript API
 - A Firebase account and a Firestore collection
 
 ### For building/extending KOFS
-- NodeJS
-- Browserify
-- UglifyJS (for minimizing)
+- NPM
 
 ## Quick start
 
@@ -56,25 +54,36 @@ ko.applyBindings(viewModel);
 ```
 
 ## Disclaimers
-I come from the world of strongly typed object oriented programming languages and strict, strongly typed ORM solutions. There are many concepts that I love and think are really useful. When creating this package, I constantly find myself thinking "How would I do it in the ORM world?". This package is the result of me trying to bring my workflow to Javascript. It is by no means an excercise in theoretical Javascript programming. So if it violates any of the reasoning behind weak typing and prototyping languages, so be it ;-)
+I come from the world of strongly typed object oriented programming languages and strict, strongly typed ORM solutions. There are many concepts that I love and think are really useful. When creating this package, I constantly find myself thinking "How would I do it in the ORM world?". This package is the result of me trying to bring my workflow to JavaScript. It is by no means an excercise in theoretical JavaScript programming. So if it violates any of the reasoning behind functional programming, so be it ;-)
 
-Furthermore, the aim of this package is not (yet?) to be a full fledged ORM with atomic transactions, deep change tracking, offline caching, etc. It just aims at doing the heavy lifting in typical MVVM situations.
+Furthermore, the aim of this package is not to be a full fledged ORM with atomic transactions, deep change tracking, offline caching, etc. It just aims at doing the heavy lifting in typical MVVM situations.
 
 ## Installation
 
-Include the build version in your project, **after** Knockout and the Firebase API.
+### NPM
+
+```shell
+npm i knockout-firestore
+```
+You Knockout and Firebase are **not** installed as dependencies. You have to install them seperately. This way, you're free to load the Firebase API as you wish, e.g. through the Firebase Reserved Hosting URLS ([Load Firebase SDKs from reserved URLs](https://firebase.google.com/docs/hosting/reserved-urls#add_scripts_for_reserved_urls))
+
+### CDN
+
+Include the CDN version in your project, **after** Knockout and the Firebase API.
 
 ```html
 <script type="text/javascript" src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.2/knockout-min.js"></script>
-...
-<script type="text/javascript" src="knockout.firestore.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/knockout-firebase@1.1.3"></script>
 ```
+
+### Local installation
+Build the package (see below). After that copy the relevant files from the `/dist` folder to your project. You can find the minimized version including type-definitions as well as the development version with mapping file in this folder. Be sure to reference them in your project **after** referencing Knockout and Firebase.
 
 ## Usage
 KOFS creates a two way binding interface between an MVVM application build with Knockout and the Firebase realtime database Firestore.
 
-First make sure you have the Firestore database hooked-up and ready to go:
+First make sure you have the Firestore database hooked-up and ready to go (unless you use reserved Hosting URLs):
 
 ```javascript
 firebase.initializeApp({
@@ -118,14 +127,24 @@ That's it! The ObservableArray is now two-way bound between the user interface a
 See the section Reference for more detailed info on how to get more fine grained control over the binding process.
 
 ## Example
-See the example folder. Load index.html in two different browsers, fill in your Firebase credentials and Firestore collection, click `bind` and view the miracle of synchronization!
+```
+npm run dev
+```
+
+Now load http://localhost:9000 in two different browsers, fill in your Firebase credentials and Firestore collection, click `bind` and view the miracle of synchronization!
 
 ## Building
-KOFS is build using [Browserify](http://browserify.org/). This enables the use of NodeJS' `require` module to keep the source code organized. The KOFS build however has no dependencies on NodeJS or any of it's modules. Use the build in every browser based Javascript project.
+KOFS is written in [TypeScript](https://www.typescriptlang.org/) and build using [webpack](https://webpack.js.org/). 
 
+The KOFS build however has no dependencies on NodeJS or any of it's modules. Use the local build or CDN version in every browser based Javascript project.
+
+Build it using:
 ```
-browserify src/index.js > dist/knockout.firestore.js 
-browserify src/index.js | uglifyjs > dist/knockout.firestore.min.js
+npm run build-dev
+```
+or
+```
+npm run build-prod
 ```
 
 ## Reference
@@ -325,6 +344,16 @@ var ThesePropertiesAreNotBound = function () {
 
 ## Release notes
 
+### 1.1.0 - 1.1.3
+Refactored from JavaScript + Browserify to TypeScript + Webpack
+
+Regression:
+* Logging temporarily disabled
+* saveAll() is broken 
+
+Known bugs:
+* One way binding doesn't deep bind
+
 ### 1.0.0
 Added:
 * Deep inludes: binding follows ObservableArrays in view model to nested Firestore collections
@@ -339,4 +368,4 @@ First beta version: two way binding between a Firestore collection and an Observ
 
 ## License
 
-© 2018 Karim Ayachi. Licensed under [The MIT License](LICENSE).
+© 2018 - 2020 Karim Ayachi. Licensed under [The MIT License](LICENSE).
