@@ -3,22 +3,23 @@
 /* globals */
 var db; // database reference
 
-document.addEventListener("DOMContentLoaded", function() { 
-    var settingsViewModel = new SettingsViewModel();
+document.addEventListener('DOMContentLoaded', function () {
+    var vm = new AppViewModel();
 
-    ko.applyBindings(settingsViewModel, document.getElementById('settingsview'));
+    ko.applyBindings(vm);
 });
 
-function SettingsViewModel () {
-    this.apiKey = ko.observable('AIzaSyBkdQdHRcJPRobG4VMq6ttnCtF4fr8-6XY');
-    this.authDomain = ko.observable('reflexo-a6432.firebaseapp.com');
-    this.projectId = ko.observable('reflexo-a6432');
-    this.collection = ko.observable('todoItems');
+function AppViewModel() {
+    this.apiKey = ko.observable('');
+    this.authDomain = ko.observable('');
+    this.projectId = ko.observable('');
+    this.collection = ko.observable('');
     this.logLevel = ko.observable(0);
     this.twoWayBinding = ko.observable(true);
+    this.todoList = ko.observable();
 
     this.bind = function () {
-        if(db == null) {
+        if (db == null) {
             /* initialization */
             firebase.initializeApp({
                 apiKey: this.apiKey(),
@@ -39,48 +40,47 @@ function SettingsViewModel () {
             includes: { actions: { class: Action, orderBy: ['percentageFinished', 'desc'] } }
         }
 
-        
+
         var todoViewModel = new TodoViewModel();
         todoViewModel.todoItems = kofs.getBoundCollection(collection, TodoItem, options);
-        ko.applyBindings(todoViewModel, document.getElementById('contentview'));
+
+        this.todoList(todoViewModel);
     }
 }
 
-function TodoViewModel () {
+function TodoViewModel() {
     var self = this;
 
-    this.add = function() {
+    this.todoItems = undefined;
+
+    this.add = function () {
         self.todoItems.push(new TodoItem());
     }
 
-    this.remove = function(item) {
+    this.remove = function (item) {
         self.todoItems.detach(item);
     }
 
-    this.save = function() {
+    this.save = function () {
         self.todoItems.saveAll();
     }
- }
+}
 
-function TodoItem () {
+function TodoItem() {
     var self = this;
 
-     this.title = ko.observable();
-     this.description = ko.observable();
-     this.finished = ko.observable(false);
-     this.createDate = ko.observable(new Date());
-     this.actions = ko.observableArray();
+    this.title = ko.observable();
+    this.description = ko.observable();
+    this.finished = ko.observable(false);
+    this.createDate = ko.observable(new Date());
+    this.actions = ko.observableArray();
 
-     this.addAction = function () {
+    this.addAction = function () {
         self.actions.push(new Action());
-     }
- }
+    }
+}
 
- TodoItem.prototype.killemall = function () {
-     console.log('KILL EM ALL');
- }
-
- function Action () {
+function Action() {
     var self = this;
 
     this.title = ko.observable();
@@ -88,12 +88,8 @@ function TodoItem () {
 
     this.addTenPercent = function () {
         var perc = self.percentageFinished();
-        if(perc <= 90) {
+        if (perc <= 90) {
             self.percentageFinished(perc + 10);
         }
-     }
-}
-
-Action.prototype.saveemall = function() {
-    console.log('SAVE EM ALL');
+    }
 }

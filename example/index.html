@@ -36,19 +36,13 @@
                 margin: 5px 0;
                 width: 300px;
             }
-            .hint {
-                color: #999;
-                font-size: 12px;
-                width: 400px;
-                margin-top: 30px;
-            }
         </style>
     </head>
 
     <body>
 
         
-        <div id="contentview">
+        <div id="contentview" data-bind="with: todoList">
             <h1>Todo list</h1>
             <table>
                 <thead>
@@ -86,7 +80,7 @@
             </table>
             
             <button data-bind="click: add">New</button>
-            <button data-bind="click: $root.save">Save all</button>
+            <button data-bind="click: save">Save all</button>
         </div>
 
         <div id="settingsview">
@@ -103,15 +97,10 @@
             </select>
             Two-way binding: <input type="checkbox" data-bind="checked: twoWayBinding" />
             <button data-bind="click: bind">Bind</button>
-
-            <div class="hint">
-                Note: you can't re-bind the ViewModel. In stead of going through the pain of ko.cleanNode and manually cleaning up DOM nodes and listeners, just reload the page if you want to test different settings.
-            </div>
         </div>
 
         <script type="text/javascript" src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.0/knockout-min.js"></script>
-        <!-- <script type="text/javascript" src="../dist/knockout.firestore.min.js"></script> -->
         <script type="text/javascript" src="knockout.firestore.js"></script>
         <script type="text/javascript" src="example.js"></script>
     </body>
