@@ -1,6 +1,6 @@
 # Knockout-Firestore
 
-The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' realtime database Firestore. It features 'deep includes' (a.k.a. Navigation Properties, a.k.a. nested collections).
+The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' Cloud Firestore (a realtime database). It features 'deep includes' (a.k.a. Navigation Properties, a.k.a. nested collections).
 
 It offers a lightweight interface to to create true MVVM applications in the browser, backed by realtime database storage.
 
@@ -10,24 +10,38 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
 
 ## Table of contents
 - [Knockout-Firestore](#knockout-firestore)
+  * [Table of contents](#table-of-contents)
   * [Prerequisites](#prerequisites)
     + [For using KOFS](#for-using-kofs)
     + [For building/extending KOFS](#for-building-extending-kofs)
   * [Quick start](#quick-start)
   * [Disclaimers](#disclaimers)
   * [Installation](#installation)
+    + [NPM](#npm)
+    + [CDN](#cdn)
+    + [Local installation](#local-installation)
   * [Usage](#usage)
   * [Example](#example)
   * [Building](#building)
   * [Reference](#reference)
     + [The kofs namespace](#the-kofs-namespace)
       - [getBoundCollection(collection, object [, options])](#getboundcollection-collection--object----options--)
+        * [collection](#collection)
+        * [object](#object)
+        * [options](#options)
     + [extensions to ko.observableArray](#extensions-to-koobservablearray)
+      - [detach(item)](#detach-item-)
+      - [saveAll()](#saveall--)
     + [extensions to the Data Model objects](#extensions-to-the-data-model-objects)
+      - [save()](#save--)
+      - [modified()](#modified--)
   * [Further reading](#further-reading)
     + [Deep includes](#deep-includes)
+      - [using the `includes` option](#using-the--includes--option)
+      - [using the `includes` property](#using-the--includes--property)
     + [Excludes](#excludes)
   * [Release notes](#release-notes)
+    + [1.1.0 - 1.1.3](#110---113)
     + [1.0.0](#100)
     + [1.0.0 - Beta 1](#100---beta-1)
   * [License](#license)
@@ -65,7 +79,7 @@ Furthermore, the aim of this package is not to be a full fledged ORM with atomic
 ```shell
 npm i knockout-firestore
 ```
-You Knockout and Firebase are **not** installed as dependencies. You have to install them seperately. This way, you're free to load the Firebase API as you wish, e.g. through the Firebase Reserved Hosting URLS ([Load Firebase SDKs from reserved URLs](https://firebase.google.com/docs/hosting/reserved-urls#add_scripts_for_reserved_urls))
+Knockout and Firebase are **not** installed as dependencies. You have to install them seperately. This way, you're free to load the Firebase API as you wish, e.g. through the Firebase Reserved Hosting URLS ([Load Firebase SDKs from reserved URLs](https://firebase.google.com/docs/hosting/reserved-urls#add_scripts_for_reserved_urls))
 
 ### CDN
 
