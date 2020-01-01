@@ -33,5 +33,10 @@ module.exports = {
     },
     plugins: [
         new CleanWebpackPlugin()
-    ]
+    ],
+    devServer: {
+        contentBase: path.join(__dirname, '../example'),
+        compress: true,
+        port: 9000
+    }
 };

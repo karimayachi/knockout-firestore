@@ -9,25 +9,36 @@
         "type": "git",
         "url": "git+https://github.com/karimayachi/knockout-firestore.git"
     },
-    "keywords": [ "knockout", "firestore", "firebase", "mvvm", "reactive", "two-way" ],
+    "keywords": [
+        "knockout",
+        "firestore",
+        "firebase",
+        "mvvm",
+        "reactive",
+        "two-way"
+    ],
     "author": "Karim Ayachi",
     "scripts": {
         "build-dev": "webpack --config build-scripts/webpack.dev.js",
         "build-prod": "webpack --config build-scripts/webpack.prod.js",
+        "dev": "webpack-dev-server --config build-scripts/webpack.dev.js",
         "prepare": "npm run build-prod"
     },
-    "files": [ "dist/**/*" ],
+    "files": [
+        "dist/**/*"
+    ],
     "dependencies": {},
     "peerDependencies": {
         "knockout": "^3.5.0"
     },
     "devDependencies": {
-        "knockout": "^3.5.0",
         "clean-webpack-plugin": "^2.0.2",
         "firebase": "^5.9.4",
+        "knockout": "^3.5.0",
         "ts-loader": "^6.0.1",
         "typescript": "^3.4.5",
         "webpack": "^4.31.0",
-        "webpack-cli": "^3.3.2"
+        "webpack-cli": "^3.3.2",
+        "webpack-dev-server": "^3.10.1"
     }
 }
