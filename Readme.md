@@ -358,11 +358,8 @@ var ThesePropertiesAreNotBound = function () {
 ### 1.1.0 - 1.1.3
 Refactored from JavaScript + Browserify to TypeScript + Webpack
 
-Regression:
+Regression/ known bugs:
 * Logging temporarily disabled
-* saveAll() is broken 
-
-Known bugs:
 * One way binding doesn't deep bind
 
 ### 1.0.0
