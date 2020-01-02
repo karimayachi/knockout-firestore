@@ -26,21 +26,15 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
   * [Reference](#reference)
     + [The kofs namespace](#the-kofs-namespace)
       - [getBoundCollection(collection, object [, options])](#getboundcollection-collection--object----options--)
-        * [collection](#collection)
-        * [object](#object)
-        * [options](#options)
     + [extensions to ko.observableArray](#extensions-to-koobservablearray)
-      - [detach(item)](#detach-item-)
-      - [saveAll()](#saveall--)
     + [extensions to the Data Model objects](#extensions-to-the-data-model-objects)
-      - [save()](#save--)
-      - [modified()](#modified--)
   * [Further reading](#further-reading)
     + [Deep includes](#deep-includes)
       - [using the `includes` option](#using-the--includes--option)
       - [using the `includes` property](#using-the--includes--property)
     + [Excludes](#excludes)
   * [Release notes](#release-notes)
+    + [1.1.4](#114)
     + [1.1.0 - 1.1.3](#110---113)
     + [1.0.0](#100)
     + [1.0.0 - Beta 1](#100---beta-1)
@@ -357,6 +351,9 @@ var ThesePropertiesAreNotBound = function () {
 ```
 
 ## Release notes
+
+### 1.1.4
+* Bugfixes: re-enabled logging
 
 ### 1.1.0 - 1.1.3
 Refactored from JavaScript + Browserify to TypeScript + Webpack

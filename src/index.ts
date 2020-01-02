@@ -3,6 +3,7 @@ import * as ko from 'knockout';
 import { ObservableArray } from 'knockout';
 import { BindableArray, createBindableArray } from './BindableArray';
 import { Bindable, createBindable } from './Bindable';
+import { Logger } from './Logger';
 
 export interface KofsOptions {
     where: [string, string, any] | [string, string, any][];
@@ -31,14 +32,14 @@ export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollect
     let includes = options.includes || {};
     let twoWayBinding: boolean = typeof options.twoWayBinding === 'undefined' ? true : options.twoWayBinding;
 
-    /* set log level */
-    //if (options.logLevel) { logging.setLogLevel(options.logLevel); }
-
     /* create the Firestore query from the collection and the options */
     let query: firestore.Query = createFirestoreQuery(<firestore.Query>fsCollection, where, orderBy);
 
+    /* create logger */
+    const logger = new Logger(options.logLevel);
+
     /* extend the observableArray with our functions */
-    let bindableArray: BindableArray<T> = createBindableArray(observableArray);
+    let bindableArray: BindableArray<T> = createBindableArray(observableArray, logger);
     bindableArray.twoWayBinding = twoWayBinding;
     bindableArray.fsQuery = query;
     bindableArray.fsCollection = fsCollection;
@@ -51,13 +52,13 @@ export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollect
             if (!change.doc.metadata.hasPendingWrites) {
 
                 if (change.type === 'added') {
-                    //logging.debug('Firestore object ' + change.doc.id + ' added to collection');
+                    logger.debug('Firestore object ' + change.doc.id + ' added to collection');
                     let item: T & { includes?: any } = new model();
                     let index: number = change.newIndex;
 
                     /* extend the Model with the Bindable functionality */
                     let combinedIncludes = Object.assign(includes, item.includes);
-                    let bindableItem: Bindable<T> = createBindable(item, combinedIncludes);
+                    let bindableItem: Bindable<T> = createBindable(item, combinedIncludes, logger);
 
                     /* fill the new object with meta-data
                      * extend / overrule the includes with includes from the passed options */
@@ -74,18 +75,18 @@ export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollect
                     bindableArray.localOnly = false;
                 }
                 if (change.type === "modified") {
-                    //logging.debug('Firestore object ' + change.doc.id + ' modified');
+                    logger.debug('Firestore object ' + change.doc.id + ' modified');
                     let localDoc: Bindable<T> | null = bindableArray.getDocument(change.doc.id);
                     if (localDoc != null) {
                         /* explode the data, but don't mess with the deep includes */
                         explodeObject(change.doc, localDoc, false);
                     }
                     else {
-                        //logging.debug('Firestore object ' + change.doc.id + ' not found in local collection');
+                        logger.debug('Firestore object ' + change.doc.id + ' not found in local collection');
                     }
                 }
                 if (change.type === "removed") {
-                    //logging.debug('Firestore object ' + change.doc.id + ' removed from collection');
+                    logger.debug('Firestore object ' + change.doc.id + ' removed from collection');
                     let localDoc: Bindable<T> | null = bindableArray.getDocument(change.doc.id);
                     if (localDoc != null) {
                         bindableArray.localOnly = true;
@@ -94,7 +95,7 @@ export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollect
                     }
                     else {
                         /* when removing from Firestore, the snapshot is triggered, so it will try to remove it again when it's no longer there */
-                        //logging.debug('Firestore object ' + change.doc.id + ' not (longer) found in local collection');
+                        logger.debug('Firestore object ' + change.doc.id + ' not (longer) found in local collection');
                     }
                 }
             }
@@ -183,7 +184,7 @@ function explodeObject<T>(firestoreDocument: firestore.QueryDocumentSnapshot, lo
             localObject.fsBaseCollection !== undefined) {
             let include: { class: new () => any, orderBy: [string, string] | [string, string][] } = (<any>localObject.includes)[key];
             let collectionRef: firestore.CollectionReference = localObject.fsBaseCollection.doc(localObject.fsDocumentId).collection(key);
-            bindCollection(property, collectionRef, include.class, { twoWayBinding: localObject.twoWayBinding, orderBy: include.orderBy });
+            bindCollection(property, collectionRef, include.class, { twoWayBinding: localObject.twoWayBinding, orderBy: include.orderBy, logLevel: localObject.logger.logLevel }); // TODO: pass Logger in stead of logLevel
         }
     }
 

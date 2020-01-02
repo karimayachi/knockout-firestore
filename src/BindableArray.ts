@@ -4,6 +4,7 @@ import { firestore } from 'firebase';
 import { Bindable, createBindable, ModelExtensions } from './Bindable';
 import { mergeObjects } from './mergeObjects';
 import { bindCollection } from './index';
+import { Logger } from './Logger';
 
 export type BindableArray<T> = ObservableArray<T> & ArrayExtensions<T>;
 
@@ -13,10 +14,12 @@ export class ArrayExtensions<T> {
     includes?: { [key: string]: { class: new () => any, orderBy: string[] | string[][] } };
     localOnly: boolean;
     twoWayBinding: boolean;
+    logger: Logger;
 
-    constructor() {
+    constructor(logger?: Logger) {
         this.localOnly = false;
         this.twoWayBinding = false;
+        this.logger = logger || new Logger();
     }
 
     getDocument(id: string): Bindable<T> | null {
@@ -49,7 +52,7 @@ export class ArrayExtensions<T> {
             /* use Knockout's internal _destroy property to filter this item out of the UI */
             observableArray.destroy(item);
 
-            //logging.debug('Document "' + item.fsDocumentId + '" detached from local collection.');
+            this.logger.debug('Document "' + (<Bindable<T>>item).fsDocumentId + '" detached from local collection.');
         }
     }
 
@@ -68,9 +71,9 @@ export class ArrayExtensions<T> {
     }
 }
 
-export function createBindableArray<T>(koObservableArray: ObservableArray<T>): BindableArray<T> {
+export function createBindableArray<T>(koObservableArray: ObservableArray<T>, logger?: Logger): BindableArray<T> {
 
-    let extension: ArrayExtensions<T> = new ArrayExtensions();
+    let extension: ArrayExtensions<T> = new ArrayExtensions(logger);
     let bindableArray: BindableArray<T>;
 
     if((<BindableArray<T>>koObservableArray).fsQuery) {
@@ -102,11 +105,11 @@ function collectionChanged<T>(this: ArrayExtensions<T>, changes: utils.ArrayChan
             case 'added':
                 /* extend the Model with the ObservableDocument functionality
                  * extend / overrule the includes with includes from passed options (only one level) */
-                let bindable: Bindable<T> = createBindable(item, this.includes);
+                let bindable: Bindable<T> = createBindable(item, this.includes, this.logger);
                 bindable.twoWayBinding = this.twoWayBinding;
 
                 if (this.twoWayBinding) {
-                    //logging.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
+                    this.logger.debug('Adding new document to Firestore collection "' + this.fsCollection.id + '"');
 
                     this.fsCollection.add(bindable.getFlatDocument())
                         .then((doc: firestore.DocumentReference): void => {
@@ -116,12 +119,12 @@ function collectionChanged<T>(this: ArrayExtensions<T>, changes: utils.ArrayChan
                             /* get deep includes for Array properties 
                              * TODO: fix that the deep linking is done here AND in explodeObject in knockout.firestore.js */
                             createAndBindDeepIncludes(bindable);
-                        }).catch(function (error) {
-                            //logging.error('Error saving Firestore document :', error);
+                        }).catch((error): void => {
+                            this.logger.error('Error saving Firestore document :', error);
                         });
                 }
                 else {
-                    //logging.debug('Adding new document to local collection only');
+                    this.logger.debug('Adding new document to local collection only');
                     bindable.state(1); /* NEW */
                     bindable.fsBaseCollection = this.fsCollection;
                 }
@@ -129,7 +132,7 @@ function collectionChanged<T>(this: ArrayExtensions<T>, changes: utils.ArrayChan
                 break;
             case 'deleted':
                 if (this.twoWayBinding) {
-                    //logging.debug('Deleting document "' + item.fsDocumentId + '" from Firestore collection "' + this.fsCollection.id + '"');
+                    this.logger.debug('Deleting document "' + (<Bindable<T>>item).fsDocumentId + '" from Firestore collection "' + this.fsCollection.id + '"');
 
                     let bindable: Bindable<T> = <Bindable<T>>item;
 
@@ -138,12 +141,12 @@ function collectionChanged<T>(this: ArrayExtensions<T>, changes: utils.ArrayChan
                     bindable.fsBaseCollection.doc(bindable.fsDocumentId)
                         .delete()
                         .catch((error: any): void => {
-                            //logging.error('Error deleting Firestore document :', error);
+                            this.logger.error('Error deleting Firestore document :', error);
                         });
                 }
                 else {
-                    //logging.debug('Document "' + item.fsDocumentId + '" removed from local collection.');
-                    //logging.debug('You\'re not using Two-Way binding, please use .detach() in stead of .remove() to persist the change when syncing to Firestore');
+                    this.logger.debug('Document "' + (<Bindable<T>>item).fsDocumentId + '" removed from local collection.');
+                    this.logger.debug('You\'re not using Two-Way binding, please use .detach() in stead of .remove() to persist the change when syncing to Firestore');
                 }
 
                 break;
@@ -167,12 +170,12 @@ function createAndBindDeepIncludes<T>(item: Bindable<T>) {
                 .doc(item.fsDocumentId)
                 .collection(key);
 
-            bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy });
+            bindCollection(property, collectionRef, include.class, { twoWayBinding: item.twoWayBinding, orderBy: include.orderBy, logLevel: item.logger.logLevel }); // TODO: Pass logger in stead of logLevel
 
             /* if the collection was locally already filled with data */
             /* TODO: Transaction for speed */
             for (let childItem of property()) {
-                let bindableChild: ModelExtensions = createBindable(childItem, {});
+                let bindableChild: ModelExtensions = createBindable(childItem, {}, item.logger);
                 bindableChild.fsBaseCollection = collectionRef;
                 bindableChild.twoWayBinding = item.twoWayBinding;
                 bindableChild.state(1); /* NEW */

@@ -2,6 +2,7 @@ import * as ko from 'knockout';
 import { Observable, PureComputed } from 'knockout';
 import { firestore } from 'firebase';
 import { mergeObjects } from './mergeObjects';
+import { Logger } from './Logger';
 
 export type Bindable<T> = ModelExtensions & T;
 
@@ -13,8 +14,9 @@ export class ModelExtensions {
     twoWayBinding: boolean;
     state: Observable<number>;
     modified: PureComputed<boolean>; /* Why is this hidden again? */
+    logger: Logger;
 
-    constructor() {
+    constructor(logger?: Logger) {
         this.lock = false;
         this.twoWayBinding = true;
 
@@ -22,6 +24,8 @@ export class ModelExtensions {
         this.modified = ko.pureComputed((): boolean => {
             return this.state() != 0;
         });
+
+        this.logger = logger || new Logger();
 
         /* Don't use decorators or end up in Prototype Hell */
         Object.defineProperty(this, 'state', {
@@ -68,12 +72,12 @@ export class ModelExtensions {
 
     save(): void {
         if (this.state() == 0) {
-            //logging.debug('Firestore document ' + this.fsDocumentId + ' unchanged');
+            this.logger.debug('Firestore document ' + this.fsDocumentId + ' unchanged');
             return;
         }
 
         if (this.fsBaseCollection === undefined) {
-            //logging.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
+            this.logger.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
             return;
         }
 
@@ -81,32 +85,32 @@ export class ModelExtensions {
 
         if (this.state() == 1) { /* NEW */
             this.fsBaseCollection.add(thisDocument).then((doc: firestore.DocumentReference): void => {
-                //logging.debug('Firestore document ' + doc.id + ' added to database');
+                this.logger.debug('Firestore document ' + doc.id + ' added to database');
                 this.fsDocumentId = doc.id;
                 if (this.state() == 2) { /* document was modified while saving */
-                    //logging.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
+                    this.logger.debug('Firestore document ' + doc.id + ' was modified during insert, save changes');
                     this.save();
                 }
                 else {
                     this.state(0);
                 }
             }).catch((error: any): void => {
-                //logging.error('Error adding Firestore document :', error);
+                this.logger.error('Error adding Firestore document :', error);
             });
         }
         else if (this.state() == 2) { /* MODIFIED */
             this.fsBaseCollection.doc(this.fsDocumentId).update(thisDocument).then((): void => {
-                //logging.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
+                this.logger.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
                 this.state(0);
             }).catch((error: any): void => {
-                //logging.error('Error saving Firestore document :', error);
+                this.logger.error('Error saving Firestore document :', error);
             });
         }
         else if (this.state() == 3) { /* DELETED */
             this.fsBaseCollection.doc(this.fsDocumentId).delete().then((): void => {
-                //logging.debug('Firestore document ' + this.fsDocumentId + ' deleted from database');
+                this.logger.debug('Firestore document ' + this.fsDocumentId + ' deleted from database');
             }).catch((error: any): void => {
-                //logging.error('Error saving Firestore document :', error);
+                this.logger.error('Error saving Firestore document :', error);
             });
         }
     }
@@ -128,7 +132,7 @@ export class ModelExtensions {
         }
 
         if (this.fsBaseCollection === undefined) {
-            //logging.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
+            this.logger.error('Firestore document ' + this.fsDocumentId + ' not part of a Collection');
             return;
         }
 
@@ -141,9 +145,9 @@ export class ModelExtensions {
         }
         else {
             this.fsBaseCollection.doc(this.fsDocumentId).update(doc).then((): void => {
-                //logging.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
+                this.logger.debug('Firestore document ' + this.fsDocumentId + ' saved to database');
             }).catch((error: any): void => {
-                //logging.error('Error saving Firestore document :', error);
+                this.logger.error('Error saving Firestore document :', error);
             });
         }
     }
@@ -155,9 +159,9 @@ export class ModelExtensions {
  * @param model the object to be made bindable
  * @param includes (optional) the deep includes for eager loading
  */
-export function createBindable<T>(model: T, includes?: any): Bindable<T> {
+export function createBindable<T>(model: T, includes?: any, logger?: Logger): Bindable<T> {
 
-    let extension = new ModelExtensions();
+    let extension = new ModelExtensions(logger);
 
     let bindableModel: Bindable<T> = mergeObjects(model, extension);
 
@@ -177,7 +181,7 @@ export function createBindable<T>(model: T, includes?: any): Bindable<T> {
             !ko.isComputed(property)) {
             ((elementName: string): void => {
                 property.subscribe((value: any): void => {
-                    //logging.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + bindableModel.lock);
+                    bindableModel.logger.debug('Knockout observable property "' + elementName + '" changed. LocalOnly: ' + bindableModel.lock);
 
                     /* ignore updates triggered by incoming changes from Firebase */
                     if (!bindableModel.lock) {
