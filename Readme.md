@@ -1,6 +1,6 @@
 # Knockout-Firestore
 
-The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' Cloud Firestore (a realtime database). It features 'deep includes' (a.k.a. Navigation Properties, a.k.a. nested collections).
+The `knockout-firestore` (KOFS) package provides an two-way binding between [Knockout](https://github.com/knockout/knockout)'s MVVM based observable objects and [Firebase](https://github.com/firebase)' Cloud Firestore (a realtime database). It features '[deep includes](#deep-includes)' (a.k.a. Navigation Properties, a.k.a. nested collections).
 
 It offers a lightweight interface to to create true MVVM applications in the browser, backed by realtime database storage.
 
@@ -190,7 +190,7 @@ Optional parameters to pass to the binding mechanism:
 
 | Key  | Value | Default |
 |------------|-------------|----------|
-| twoWayBinding | true/false <br><br>When set to false, local changes are not automatically saved back to the database. You will have to manually call `save()` or `saveAll()`. Also when using manual saving, be sure to use `detach()` in stead of `remove()`. | true |
+| twoWayBinding | true/false <br><br>When set to false, local changes are not automatically saved back to the database. You will have to manually call `save()` or `saveAll()`. Also  be sure to use `detach()` in stead of `remove()`. <br><br> **Note:** setting this false will also disable deep bindings!| true |
 | where | [ path, operation, value ] or [ [ path, operation, value ],  [ path, operation, value ], ... ] ] ]<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes| [ ] |
 | orderBy | [ property, 'asc' / 'desc' ] or [ [ property, 'asc' / 'desc' ],  [ property, 'asc' / 'desc' ], ... ] ]<br><br>Provide one or more where-clauses to make up the query that fills the collection and is listened to for changes | [ ] |
 | includes | { property : { class: ViewModel, orderBy: [ property, 'asc' / 'desc' ] }, ... }<br><br>property: navigation property / nested array to follow<br>ViewModel: view model function<br>orderBy: OrderBy clause as above<br><br>See [Deep includes](#deep-includes) | { } |
@@ -246,7 +246,7 @@ Only when using one-way binding. This is a `ko.observable` that returns true if 
 ## Further reading
 
 ### Deep includes
-**Note:** Deep includes are ignored when twoWayBinding is set to false
+> **Note:** Deep includes are ignored when twoWayBinding is set to false
 
 KOFS can follow observableArrays in your view model and automatically bind them to nested collections in Firestore. There are two ways to configure this:
 
@@ -360,7 +360,6 @@ Refactored from JavaScript + Browserify to TypeScript + Webpack
 
 Regression/ known bugs:
 * Logging temporarily disabled
-* One way binding doesn't deep bind
 
 ### 1.0.0
 Added:
