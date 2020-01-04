@@ -15,7 +15,7 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
     + [For using KOFS](#for-using-kofs)
     + [For building/extending KOFS](#for-building-extending-kofs)
   * [Quick start](#quick-start)
-  * [Disclaimers](#disclaimers)
+  * [Disclaimer](#disclaimer)
   * [Installation](#installation)
     + [NPM](#npm)
     + [CDN](#cdn)
@@ -30,8 +30,6 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
     + [extensions to the Data Model objects](#extensions-to-the-data-model-objects)
   * [Further reading](#further-reading)
     + [Deep includes](#deep-includes)
-      - [using the `includes` option](#using-the--includes--option)
-      - [using the `includes` property](#using-the--includes--property)
     + [Excludes](#excludes)
   * [Release notes](#release-notes)
     + [1.1.4](#114)
@@ -43,7 +41,7 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
 ## Prerequisites
 
 ### For using KOFS
-- Knockout
+- Knockout >= 3.5.0
 - Firebase JavaScript API
 - A Firebase account and a Firestore collection
 
@@ -61,7 +59,7 @@ viewModel.blogPostsList = kofs.getBoundCollection(collection, BlogPost);
 ko.applyBindings(viewModel);
 ```
 
-## Disclaimers
+## Disclaimer
 I come from the world of strongly typed object oriented programming languages and strict, strongly typed ORM solutions. There are many concepts that I love and think are really useful. When creating this package, I constantly find myself thinking "How would I do it in the ORM world?". This package is the result of me trying to bring my workflow to JavaScript. It is by no means an excercise in theoretical JavaScript programming. So if it violates any of the reasoning behind functional programming, so be it ;-)
 
 Furthermore, the aim of this package is not to be a full fledged ORM with atomic transactions, deep change tracking, offline caching, etc. It just aims at doing the heavy lifting in typical MVVM situations.
@@ -161,12 +159,23 @@ npm run build-prod
 The kofs namespace exposes the following functions:
 
 #### getBoundCollection(collection, object [, options])
+Retrieves a collection from Firestore and returns a observableArray that is bound to that collection.
 
-returns: a `ko.ObservableArray` with some additional functionality (see below).
+returns: a `ko.observableArray` with some additional functionality (see [below](#extensions-to-koobservablearray)).
+
+#### bindCollection(observableArray, collection, object [, options])
+
+Takes an existing `ko.observableArray`, extends it with additional functionality (see [below](#extensions-to-koobservablearray)) and binds it to a Firestore collection.
+
+returns: -
+
+##### observableArray
+type: ko.observableArray<br>
+An exisiting observableArray that will be extended (see [below](#extensions-to-koobservablearray)) and bound to the Firestore collection
 
 ##### collection
 type: [firebase.firestore.CollectionReference](https://firebase.google.com/docs/reference/js/firebase.firestore.CollectionReference)<br>
-This is the base collection that is used for the initial filling of the `ko.ObservableArray` and where new documents will be added as new items are pushed onto the `ko.ObservableArray`
+This is the base collection that is used for the initial filling of the `ko.observableArray` and where new documents will be added as new items are pushed onto the `ko.observableArray`
 
 ##### object
 type: [Function]<br>
@@ -289,7 +298,7 @@ var BlogViewModel = function () {
 Only one level of includes can be defined using this method.
 
 #### using the `includes` property
-Another way to configure the deep includes is using the `includes` property in your view model.
+Another way to configure the deep includes is using the `includes` property in your (view)model.
 
 Example:
 ```javascript
@@ -340,7 +349,6 @@ var ThesePropertiesAreNotBound = function () {
 
     this.vanillaProperty = 'hello world';
 
-    // this.observableYetNotBoundProperty = ko.observable();
     Object.defineProperty(this, 'observableYetNotBoundProperty', {
         enumerable: false,
         configurable: false,
