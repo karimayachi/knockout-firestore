@@ -26,6 +26,7 @@ It aims at being simple, clean, lightweight and without dependencies on framewor
   * [Reference](#reference)
     + [The kofs namespace](#the-kofs-namespace)
       - [getBoundCollection(collection, object [, options])](#getboundcollection-collection--object----options--)
+      - [bindCollection(observableArray, collection, object [, options])](#bindCollection-observablearray--collection--object----options--)
     + [extensions to ko.observableArray](#extensions-to-koobservablearray)
     + [extensions to the Data Model objects](#extensions-to-the-data-model-objects)
   * [Further reading](#further-reading)
