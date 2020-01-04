@@ -103,7 +103,7 @@ export function bindCollection<T>(observableArray: ObservableArray<T>, fsCollect
     });
 }
 
-function createFirestoreQuery(collection: firestore.Query, where: any, orderBy: any) {
+function createFirestoreQuery(collection: firestore.Query, where: any, orderBy: any): firestore.Query {
     /* convert our where and orderby arrays to real Firestore queries */
 
     let query: firestore.Query = collection;
@@ -133,7 +133,7 @@ function createFirestoreQuery(collection: firestore.Query, where: any, orderBy: 
     return query;
 }
 
-function explodeObject<T>(firestoreDocument: firestore.QueryDocumentSnapshot, localObject: Bindable<T>, deepInclude: boolean) {
+function explodeObject<T>(firestoreDocument: firestore.QueryDocumentSnapshot, localObject: Bindable<T>, deepInclude: boolean): void {
     /* during update set lock on the file, so there will be no update loop */
     localObject.lock = true;
 
